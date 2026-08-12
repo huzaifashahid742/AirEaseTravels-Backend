@@ -14,56 +14,89 @@ const sanitizeMongoUri = (uri) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+let lastDbError = null;
+let reconnectTimer = null;
+
 export const isDbConnected = () => mongoose.connection.readyState === 1;
+
+export const getDbStatus = () => ({
+    connected: isDbConnected(),
+    lastError: lastDbError,
+});
 
 export const requireDb = (req, res, next) => {
     if (isDbConnected()) return next();
     return res.status(503).json({
         success: false,
-        message: "Database is not connected yet. Check MONGO_URI on Railway.",
+        message: "Database is not connected. Fix MONGO_URI on Railway and redeploy.",
+        ...(lastDbError && { detail: lastDbError }),
     });
 };
 
-const connectDB = async ({ retries = 5, delayMs = 5000 } = {}) => {
+const connectDB = async ({ retries = 5, delayMs = 5000, silent = false } = {}) => {
+    if (isDbConnected()) return true;
+
     const mongoURI = sanitizeMongoUri(process.env.MONGO_URI);
 
     if (!mongoURI) {
-        console.error("MONGO_URI is missing. Set it in Railway service variables.".red.bold);
+        lastDbError = "MONGO_URI is missing on this Railway service.";
+        if (!silent) console.error(lastDbError.red.bold);
         return false;
     }
 
     const hasPlaceholder = /<(db_)?(username|password)>/i.test(mongoURI);
     if (hasPlaceholder) {
-        console.error("MONGO_URI still contains Atlas placeholders (<db_password> etc.).".red.bold);
-        console.error(
-            "On Railway: open Project Settings -> Shared Variables -> click SHARE for each variable and select AirEaseTravels-Backend.".yellow
-        );
+        lastDbError = "MONGO_URI contains Atlas placeholders (<db_password>). Share real variables to the service.";
+        if (!silent) {
+            console.error("MONGO_URI still contains Atlas placeholders (<db_password> etc.).".red.bold);
+            console.error(
+                "On Railway: Project Settings -> Shared Variables -> SHARE each variable to AirEaseTravels-Backend.".yellow
+            );
+        }
         return false;
     }
 
     for (let attempt = 1; attempt <= retries; attempt += 1) {
         try {
             await mongoose.connect(mongoURI);
-            console.log(`MongoDB Connected: ${mongoose.connection.host}`.cyan);
+            lastDbError = null;
+            if (!silent) console.log(`MongoDB Connected: ${mongoose.connection.host}`.cyan);
             return true;
         } catch (error) {
-            console.error(
-                `MongoDB connection attempt ${attempt}/${retries} failed: ${error.message}`.red.bold
-            );
-            if (attempt < retries) {
-                console.log(`Retrying MongoDB in ${delayMs / 1000}s...`.yellow);
-                await sleep(delayMs);
+            lastDbError = error.message;
+            if (!silent) {
+                console.error(
+                    `MongoDB connection attempt ${attempt}/${retries} failed: ${error.message}`.red.bold
+                );
+                if (attempt < retries) {
+                    console.log(`Retrying MongoDB in ${delayMs / 1000}s...`.yellow);
+                    await sleep(delayMs);
+                }
             }
         }
     }
 
-    console.error(
-        "MongoDB connection failed after all retries. Server stays online for health checks; API routes return 503 until DB connects.".red.bold
-    );
-    console.error(
-        "Fix MONGO_URI on Railway: no quotes, URL-encode special characters in the password.".yellow
-    );
+    if (!silent) {
+        console.error(
+            "MongoDB connection failed after all retries. API routes return 503 until DB connects.".red.bold
+        );
+        console.error(
+            "Verify MONGO_URI password in Atlas (case-sensitive) and allow 0.0.0.0/0 in Atlas Network Access.".yellow
+        );
+    }
     return false;
+};
+
+export const startDbReconnectLoop = () => {
+    if (reconnectTimer) return;
+
+    reconnectTimer = setInterval(async () => {
+        if (isDbConnected()) return;
+        await connectDB({ retries: 1, delayMs: 0, silent: true });
+        if (isDbConnected()) {
+            console.log("MongoDB reconnected successfully.".green);
+        }
+    }, 30000);
 };
 
 export default connectDB;

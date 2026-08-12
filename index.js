@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
-import connectDB, { isDbConnected, requireDb } from "./DataBase/DataBaseConnection.js";
+import connectDB, { getDbStatus, requireDb, startDbReconnectLoop } from "./DataBase/DataBaseConnection.js";
 import router from "./Routes/Add-UniversityRoute.js";
 import Programrouter from "./Routes/Add-ProgramRoute.js";
 import Whyrouter from "./Routes/WhyCountriesRoute.js";
@@ -115,10 +115,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/api/health", (req, res) => {
+    const db = getDbStatus();
     res.status(200).json({
         success: true,
-        message: isDbConnected() ? "Backend is healthy" : "Backend online, database connecting",
-        database: isDbConnected() ? "connected" : "disconnected",
+        message: db.connected ? "Backend is healthy" : "Backend online, database disconnected",
+        database: db.connected ? "connected" : "disconnected",
+        ...(db.lastError && !db.connected ? { dbError: db.lastError } : {}),
         auth: ["signup", "signin"],
     });
 });
@@ -137,6 +139,7 @@ const startServer = async () => {
     });
 
     await connectDB();
+    startDbReconnectLoop();
 };
 
 startServer().catch((error) => {
