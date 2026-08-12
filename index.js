@@ -18,14 +18,26 @@ const app = express();
 
 const logEnv = (name) => {
     const value = process.env[name];
-    console.log(`${name}: ${value ? "set" : "MISSING"}`.yellow);
+    const status = value ? "set" : "MISSING";
+    console.log(`${name}: ${status}`.yellow);
+    return Boolean(value);
 };
 
 console.log("Environment check:".yellow);
-logEnv("MONGO_URI");
-logEnv("JWT_SECRET");
-logEnv("CORS_ORIGIN");
+const hasMongo = logEnv("MONGO_URI");
+const hasJwt = logEnv("JWT_SECRET");
+const hasCors = logEnv("CORS_ORIGIN");
+logEnv("FRONTEND_URL");
 logEnv("PORT");
+
+if (!hasMongo || !hasJwt) {
+    console.error(
+        "Required Railway variables missing on THIS service. Shared Variables with a yellow ! are not linked yet — click SHARE and select AirEaseTravels-Backend.".red.bold
+    );
+}
+if (!hasCors) {
+    console.warn("CORS_ORIGIN not set; allowing aireasetravelstours*.vercel.app via code fallback.".yellow);
+}
 
 if (!process.env.JWT_SECRET) {
     console.error("JWT_SECRET is required in Railway service variables.".red.bold);

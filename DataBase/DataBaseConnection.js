@@ -32,8 +32,12 @@ const connectDB = async ({ retries = 5, delayMs = 5000 } = {}) => {
         return false;
     }
 
-    if (mongoURI.includes("<db_password>") || mongoURI.includes("<db_username>")) {
-        console.error("MONGO_URI still contains Atlas placeholders. Replace with real credentials.".red.bold);
+    const hasPlaceholder = /<(db_)?(username|password)>/i.test(mongoURI);
+    if (hasPlaceholder) {
+        console.error("MONGO_URI still contains Atlas placeholders (<db_password> etc.).".red.bold);
+        console.error(
+            "On Railway: open Project Settings -> Shared Variables -> click SHARE for each variable and select AirEaseTravels-Backend.".yellow
+        );
         return false;
     }
 
