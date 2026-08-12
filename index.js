@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
-import connectDB from "./DataBase/DataBaseConnection.js";
+import connectDB, { isDbConnected, requireDb } from "./DataBase/DataBaseConnection.js";
 import router from "./Routes/Add-UniversityRoute.js";
 import Programrouter from "./Routes/Add-ProgramRoute.js";
 import Whyrouter from "./Routes/WhyCountriesRoute.js";
@@ -16,8 +16,20 @@ import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 dotenv.config();
 const app = express();
 
+const logEnv = (name) => {
+    const value = process.env[name];
+    console.log(`${name}: ${value ? "set" : "MISSING"}`.yellow);
+};
+
+console.log("Environment check:".yellow);
+logEnv("MONGO_URI");
+logEnv("JWT_SECRET");
+logEnv("CORS_ORIGIN");
+logEnv("PORT");
+
 if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET is required in environment variables.");
+    console.error("JWT_SECRET is required in Railway service variables.".red.bold);
+    process.exit(1);
 }
 
 const Port = process.env.PORT || 7000;
@@ -52,7 +64,6 @@ const isAllowedOrigin = (origin) => {
     const normalized = normalizeOrigin(origin);
     if (allowedOrigins.includes(normalized)) return true;
 
-    // Vercel production + preview deploy URLs for this project
     if (/^https:\/\/aireasetravelstours([-a-z0-9]+)?\.vercel\.app$/i.test(normalized)) {
         return true;
     }
@@ -62,7 +73,7 @@ const isAllowedOrigin = (origin) => {
 
 if (allowedOrigins.length === 0) {
     console.warn(
-        "No CORS origins configured. Set CORS_ORIGIN on the Railway service (not only project shared vars).".yellow
+        "No CORS origins configured. Set CORS_ORIGIN on the Railway service.".yellow
     );
 } else {
     console.log(`CORS configured origins: ${allowedOrigins.join(", ")}`.green);
@@ -94,24 +105,29 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.get("/api/health", (req, res) => {
     res.status(200).json({
         success: true,
-        message: "Backend is healthy",
+        message: isDbConnected() ? "Backend is healthy" : "Backend online, database connecting",
+        database: isDbConnected() ? "connected" : "disconnected",
         auth: ["signup", "signin"],
     });
 });
 
-app.use("/api/universities", router);
-app.use("/api/programs", Programrouter);
-app.use("/api/country-details", Whyrouter);
-app.use("/api/auth", Userrouter);
-app.use("/api/visa-applications", Applyrouter);
+app.use("/api/universities", requireDb, router);
+app.use("/api/programs", requireDb, Programrouter);
+app.use("/api/country-details", requireDb, Whyrouter);
+app.use("/api/auth", requireDb, Userrouter);
+app.use("/api/visa-applications", requireDb, Applyrouter);
 app.use(notFound);
 app.use(errorHandler);
 
 const startServer = async () => {
-    await connectDB();
-    app.listen(Port, () => {
+    app.listen(Port, "0.0.0.0", () => {
         console.log(`Port is started at ${Port}`.blue.bold);
     });
+
+    await connectDB();
 };
 
-startServer();
+startServer().catch((error) => {
+    console.error(`Fatal startup error: ${error.message}`.red.bold);
+    process.exit(1);
+});
