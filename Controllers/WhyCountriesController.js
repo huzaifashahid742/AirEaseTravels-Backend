@@ -1,4 +1,5 @@
 import CountryDetail from "../Modals/WhyCountriesModal.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const createCountryDetail = async (req, res) => {
     try {
@@ -21,7 +22,8 @@ export const createCountryDetail = async (req, res) => {
         
         let flagImagePath = "default-flag.png";
         if (req.file) {
-            flagImagePath = `uploads/${req.file.filename}`;
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "country-flags");
+            flagImagePath = cloudinaryResult.secure_url;
         }
 
         if (
@@ -153,7 +155,8 @@ export const updateCountryDetail = async (req, res) => {
         }
 
         if (req.file) {
-            countryProfile.flagImage = `uploads/${req.file.filename}`;
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "country-flags");
+            countryProfile.flagImage = cloudinaryResult.secure_url;
         }
 
         const fieldsToUpdate = [

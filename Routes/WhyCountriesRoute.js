@@ -6,7 +6,9 @@ import { upload } from "../middleware/uploadMiddleware.js";
 const Whyrouter = express.Router();
 
 Whyrouter.get("/", getCountryDetails);
-Whyrouter.post("/",upload.single("flagImage"), protect, authorizePermission("countryDetails"), createCountryDetail);
-Whyrouter.put("/:id",upload.single("flagImage"), protect, authorizePermission("countryDetails"),  updateCountryDetail);
+
+// Corrected order: Authenticate and authorize FIRST, then parse the file with multer
+Whyrouter.post("/", protect, authorizePermission("countryDetails"), upload.single("flagImage"), createCountryDetail);
+Whyrouter.put("/:id", protect, authorizePermission("countryDetails"), upload.single("flagImage"), updateCountryDetail);
 
 export default Whyrouter;
