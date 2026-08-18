@@ -1,4 +1,5 @@
-const multer = require('multer');
+import multer from 'multer';
+
 const storage = multer.memoryStorage();
 
 const upload = multer({ 
@@ -8,7 +9,7 @@ const upload = multer({
 
 const uploadProfilePhoto = upload.single('profilePhoto');
 
-module.exports = {
+export {
     upload,
     uploadProfilePhoto
 };
