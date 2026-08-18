@@ -146,7 +146,7 @@ export const updateUniversity = async (req, res) => {
             return res.status(404).json({ success: false, message: "University not found" });
         }
 
-        // Build update object dynamically
+        // Build update object dynamically including all text fields
         let updatedFields = {};
         if (country !== undefined) updatedFields.country = country;
         if (city !== undefined) updatedFields.city = city;
@@ -155,13 +155,13 @@ export const updateUniversity = async (req, res) => {
         if (status !== undefined) updatedFields.status = status;
         if (link !== undefined) updatedFields.link = link;
 
-        // Handle Cloudinary file upload if a new logo file is attached
+        // Handle Cloudinary file upload if a new logo file is attached via Multer
         if (req.file) {
             const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
             updatedFields.logo = cloudinaryResult.secure_url;
         }
 
-        // Handle name change and slug generation
+        // Handle name change and slug generation safely
         if (universityName && universityName !== university.universityName) {
             const nameExists = await University.findOne({ universityName });
             if (nameExists) {
