@@ -48,6 +48,8 @@ export const createUniversity = async (req, res) => {
             message: error.message || "Server Error"
         });
     }
+    console.log("REQ.FILE:", req.file);
+    console.log("REQ.BODY:", req.body);
 };
 
 export const getUniversityById = async (req, res) => {
@@ -194,4 +196,6 @@ export const updateUniversity = async (req, res) => {
             message: error.message || "Server Error"
         });
     }
+    console.log("REQ.FILE:", req.file);
+    console.log("REQ.BODY:", req.body);
 };
