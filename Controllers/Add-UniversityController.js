@@ -135,18 +135,16 @@ export const deleteUniversity = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
-
 export const updateUniversity = async (req, res) => {
     try {
         const { id } = req.params;
-        const { universityName, country, city, programCount, universityType, status, link } = req.body;
+        const { universityName, country, city, programCount, universityType, status, link, removeLogo } = req.body;
 
         let university = await University.findById(id);
         if (!university) {
             return res.status(404).json({ success: false, message: "University not found" });
         }
 
-        // Build update object dynamically including all text fields
         let updatedFields = {};
         if (country !== undefined) updatedFields.country = country;
         if (city !== undefined) updatedFields.city = city;
@@ -159,6 +157,9 @@ export const updateUniversity = async (req, res) => {
         if (req.file) {
             const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
             updatedFields.logo = cloudinaryResult.secure_url;
+        } else if (removeLogo === "true") {
+            // Allow explicitly clearing the logo if requested from frontend
+            updatedFields.logo = "";
         }
 
         // Handle name change and slug generation safely
