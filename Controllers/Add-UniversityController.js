@@ -146,21 +146,22 @@ export const updateUniversity = async (req, res) => {
             return res.status(404).json({ success: false, message: "University not found" });
         }
 
-        let updatedFields = {
-            country,
-            city,
-            programCount,
-            universityType,
-            status,
-            link,
-        };
+        // Build update object dynamically
+        let updatedFields = {};
+        if (country !== undefined) updatedFields.country = country;
+        if (city !== undefined) updatedFields.city = city;
+        if (programCount !== undefined) updatedFields.programCount = programCount;
+        if (universityType !== undefined) updatedFields.universityType = universityType;
+        if (status !== undefined) updatedFields.status = status;
+        if (link !== undefined) updatedFields.link = link;
 
-        // Handle Cloudinary file upload if a new logo is attached
+        // Handle Cloudinary file upload if a new logo file is attached
         if (req.file) {
             const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
             updatedFields.logo = cloudinaryResult.secure_url;
         }
 
+        // Handle name change and slug generation
         if (universityName && universityName !== university.universityName) {
             const nameExists = await University.findOne({ universityName });
             if (nameExists) {
@@ -170,8 +171,8 @@ export const updateUniversity = async (req, res) => {
             updatedFields.universityName = universityName;
             updatedFields.slug = universityName
                 .toLowerCase()
-                .replace(/[^a-z0-9 ]/g, "")
-                .replace(/\s+/g, "-");
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "");
         }
 
         university = await University.findByIdAndUpdate(
