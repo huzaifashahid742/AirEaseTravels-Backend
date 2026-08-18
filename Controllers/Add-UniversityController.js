@@ -2,9 +2,14 @@ import University from "../Modals/Add-UniversityModal.js";
 import Program from "../Modals/Add-ProgramModal.js";
 import VisaApplication from "../Modals/ApplyViaUsModal.js";
 import { containsRegex, exactRegex } from "../utils/searchHelpers.js";
-import { uploadToCloudinary } from "../utils/cloudinaryUpload.js"; // Import Cloudinary helper
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const createUniversity = async (req, res) => {
+    // Debug logs placed at the top to track incoming payload and files
+    console.log("--- CREATE UNIVERSITY HIT ---");
+    console.log("REQ.FILE:", req.file);
+    console.log("REQ.BODY:", req.body);
+
     try {
         const { universityName, country, city, programCount, universityType, status, link } = req.body;
         
@@ -17,11 +22,16 @@ export const createUniversity = async (req, res) => {
             return res.status(400).json({ message: "A university with this name already exists" });
         }
         
-        // Handle Cloudinary upload if a file was sent
         let logoUrl = "";
         if (req.file) {
-            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
-            logoUrl = cloudinaryResult.secure_url;
+            try {
+                const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
+                console.log("CLOUDINARY RESULT:", cloudinaryResult);
+                logoUrl = cloudinaryResult.secure_url;
+            } catch (cloudError) {
+                console.error("CLOUDINARY UPLOAD ERROR:", cloudError);
+                return res.status(500).json({ success: false, message: "Failed to upload logo image" });
+            }
         }
         
         const university = await University.create({
@@ -43,13 +53,12 @@ export const createUniversity = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("CREATE UNIVERSITY ERROR:", error);
         res.status(500).json({
             success: false,
             message: error.message || "Server Error"
         });
     }
-    console.log("REQ.FILE:", req.file);
-    console.log("REQ.BODY:", req.body);
 };
 
 export const getUniversityById = async (req, res) => {
@@ -137,7 +146,13 @@ export const deleteUniversity = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+
 export const updateUniversity = async (req, res) => {
+    // Debug logs placed at the top
+    console.log("--- UPDATE UNIVERSITY HIT ---");
+    console.log("REQ.FILE:", req.file);
+    console.log("REQ.BODY:", req.body);
+
     try {
         const { id } = req.params;
         const { universityName, country, city, programCount, universityType, status, link, removeLogo } = req.body;
@@ -155,16 +170,19 @@ export const updateUniversity = async (req, res) => {
         if (status !== undefined) updatedFields.status = status;
         if (link !== undefined) updatedFields.link = link;
 
-        // Handle Cloudinary file upload if a new logo file is attached via Multer
         if (req.file) {
-            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
-            updatedFields.logo = cloudinaryResult.secure_url;
+            try {
+                const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
+                console.log("CLOUDINARY UPDATE RESULT:", cloudinaryResult);
+                updatedFields.logo = cloudinaryResult.secure_url;
+            } catch (cloudError) {
+                console.error("CLOUDINARY UPLOAD ERROR:", cloudError);
+                return res.status(500).json({ success: false, message: "Failed to upload logo image" });
+            }
         } else if (removeLogo === "true") {
-            // Allow explicitly clearing the logo if requested from frontend
             updatedFields.logo = "";
         }
 
-        // Handle name change and slug generation safely
         if (universityName && universityName !== university.universityName) {
             const nameExists = await University.findOne({ universityName });
             if (nameExists) {
@@ -191,11 +209,10 @@ export const updateUniversity = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("UPDATE UNIVERSITY ERROR:", error);
         res.status(500).json({
             success: false,
             message: error.message || "Server Error"
         });
     }
-    console.log("REQ.FILE:", req.file);
-    console.log("REQ.BODY:", req.body);
 };
