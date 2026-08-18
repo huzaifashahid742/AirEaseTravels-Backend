@@ -2,20 +2,11 @@ import University from "../Modals/Add-UniversityModal.js";
 import Program from "../Modals/Add-ProgramModal.js";
 import VisaApplication from "../Modals/ApplyViaUsModal.js";
 import { containsRegex, exactRegex } from "../utils/searchHelpers.js";
-
-const MAX_LOGO_LENGTH = 3_000_000;
-
-const normalizeLogo = (logo) => {
-    if (!logo || logo === "default-logo.png") return "";
-    if (typeof logo === "string" && logo.length > MAX_LOGO_LENGTH) {
-        throw new Error("Logo image is too large. Please use a smaller file.");
-    }
-    return logo;
-};
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js"; // Import Cloudinary helper
 
 export const createUniversity = async (req, res) => {
     try {
-        const { universityName, country, city, programCount, universityType, logo, status, link } = req.body;
+        const { universityName, country, city, programCount, universityType, status, link } = req.body;
         
         if (!universityName || !country || !city || programCount === undefined || !universityType || !link) {
             return res.status(400).json({ message: "Please provide all required fields" });
@@ -26,13 +17,20 @@ export const createUniversity = async (req, res) => {
             return res.status(400).json({ message: "A university with this name already exists" });
         }
         
+        // Handle Cloudinary upload if a file was sent
+        let logoUrl = "";
+        if (req.file) {
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
+            logoUrl = cloudinaryResult.secure_url;
+        }
+        
         const university = await University.create({
             universityName,
             country,
             city,
             programCount,
             universityType,
-            logo: normalizeLogo(logo),
+            logo: logoUrl,
             status,
             link,
             createdBy: req.user._id,
@@ -141,15 +139,13 @@ export const deleteUniversity = async (req, res) => {
 export const updateUniversity = async (req, res) => {
     try {
         const { id } = req.params;
-        const { universityName, country, city, programCount, universityType, logo, status, link } = req.body;
+        const { universityName, country, city, programCount, universityType, status, link } = req.body;
 
-        // 1. Find the university first to verify existence
         let university = await University.findById(id);
         if (!university) {
             return res.status(404).json({ success: false, message: "University not found" });
         }
 
-        // 2. If the name is changing, check for duplicates and manually generate a new slug
         let updatedFields = {
             country,
             city,
@@ -159,8 +155,10 @@ export const updateUniversity = async (req, res) => {
             link,
         };
 
-        if (logo !== undefined) {
-            updatedFields.logo = normalizeLogo(logo);
+        // Handle Cloudinary file upload if a new logo is attached
+        if (req.file) {
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
+            updatedFields.logo = cloudinaryResult.secure_url;
         }
 
         if (universityName && universityName !== university.universityName) {
@@ -170,18 +168,16 @@ export const updateUniversity = async (req, res) => {
             }
             
             updatedFields.universityName = universityName;
-            // Regenerate slug since pre-save hooks don't run on findByIdAndUpdate
             updatedFields.slug = universityName
                 .toLowerCase()
                 .replace(/[^a-z0-9 ]/g, "")
                 .replace(/\s+/g, "-");
         }
 
-        // 3. Update the document in the database
         university = await University.findByIdAndUpdate(
             id,
             { $set: updatedFields },
-            { new: true, runValidators: true } // 'new: true' returns the modified document instead of the old one
+            { new: true, runValidators: true }
         );
 
         res.status(200).json({

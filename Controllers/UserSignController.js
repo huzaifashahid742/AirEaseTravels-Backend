@@ -15,6 +15,7 @@ import {
 } from "../constants/roles.js";
 import VisaApplication from "../Modals/ApplyViaUsModal.js";
 import jwt from "jsonwebtoken";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js"; // Import Cloudinary helper
 
 const generateToken = (id) =>
     jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -68,9 +69,13 @@ export const signupUser = async (req, res) => {
             return res.status(400).json({ success: false, message: "A user with this email already exists" });
         }
         
-        // This line is correct: extracts the uploaded file path
-        const profilePhotoPath = req.file ? `/uploads/${req.file.filename}` : "";
-        console.log("CHECKING REQ.FILE:", req.file);
+        // Upload profile photo buffer to Cloudinary if file exists
+        let profilePhotoUrl = "";
+        if (req.file) {
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "user-profiles");
+            profilePhotoUrl = cloudinaryResult.secure_url;
+        }
+
         const user = await User.create({
             name: name.trim(),
             email: normalizedEmail,
@@ -90,7 +95,7 @@ export const signupUser = async (req, res) => {
                 countryOfResidence: countryOfResidence?.trim() || "",
                 passportNumber: passportNumber?.trim().toUpperCase() || "",
                 currentAddress: currentAddress?.trim() || "",
-                profilePhoto: profilePhotoPath, // 🔴 ADDED THIS LINE HERE
+                profilePhoto: profilePhotoUrl,
             },
         });
 
@@ -161,7 +166,8 @@ export const updateUserProfile = async (req, res) => {
         }
 
         if (req.file) {
-            profileUpdates.profilePhoto = `/uploads/${req.file.filename}`;
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "user-profiles");
+            profileUpdates.profilePhoto = cloudinaryResult.secure_url;
         }
 
         const updates = { profile: profileUpdates };
@@ -330,7 +336,6 @@ export const getAllStudents = async (req, res) => {
 
 export const getStudentById = async (req, res) => {
     try {
-        // Use regex for role to match how getAllStudents handles it safely
         const student = await User.findOne({ 
             _id: req.params.id, 
             role: { $regex: /^user$/i } 

@@ -2,6 +2,7 @@ import VisaApplication from "../Modals/ApplyViaUsModal.js";
 import Program from "../Modals/Add-ProgramModal.js";
 import { validateApplicationSubmit } from "../utils/applicationValidation.js";
 import { hasPermission } from "../constants/roles.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js"; // Import Cloudinary helper
 
 const buildFullName = (personalInfo) => {
     const p = personalInfo || {};
@@ -12,20 +13,16 @@ const buildFullName = (personalInfo) => {
 const normalizePersonalInfo = (personalInfo) => {
     if (!personalInfo) return {};
     
-    // Convert Mongoose document to plain JS object if necessary
     const p = typeof personalInfo.toObject === 'function' 
         ? personalInfo.toObject() 
         : { ...personalInfo };
 
     p.fullName = buildFullName(p);
 
-    // Explicitly handle both CNIC casing variations
     const incomingCnic = p.cnic || p.CNIC;
     if (incomingCnic) {
         p.cnic = String(incomingCnic).trim();
     }
-
-    // Remove uppercase key to keep payload clean
     delete p.CNIC; 
 
     return p;
@@ -54,8 +51,6 @@ const pickDraftPayload = (body) => {
         payload.personalInfo = normalizePersonalInfo(payload.personalInfo);
     }
 
-    // --- NEW: CLEAN EMPTY OBJECTS FROM STRINGS ---
-    // This loops through your attachment and academic fields and turns any empty objects "{}" into empty strings ""
     if (payload.attachments && typeof payload.attachments === 'object') {
         Object.keys(payload.attachments).forEach(key => {
             const val = payload.attachments[key];
@@ -92,21 +87,26 @@ const pickDraftPayload = (body) => {
     return payload;
 };
 
-const handleFileMapping = (req, payload) => {
-    if (!req.files || !Array.isArray(req.files)) return payload;
+// Updated to asynchronously process buffer uploads via Cloudinary
+const handleFileMapping = async (req, payload) => {
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) return payload;
 
     if (!payload.attachments) payload.attachments = {};
     if (!payload.academicBackground) payload.academicBackground = {};
     if (!payload.languageProficiency) payload.languageProficiency = {};
 
-    req.files.forEach(file => {
+    for (const file of req.files) {
         const fieldName = file.fieldname.toLowerCase();
+        
+        // Upload buffer to Cloudinary under folder "visa-documents"
+        const cloudinaryResult = await uploadToCloudinary(file.buffer, "visa-documents");
+        const fileUrl = cloudinaryResult.secure_url;
 
         if (fieldName.includes('resume')) {
-            payload.attachments.resumeCv = `/uploads/${file.filename}`;
+            payload.attachments.resumeCv = fileUrl;
         }
         else if (fieldName.includes('passport')) {
-            payload.attachments.passportCopyUpload = `/uploads/${file.filename}`;
+            payload.attachments.passportCopyUpload = fileUrl;
         }
         else if (fieldName.startsWith('schoolresultupload_')) {
             const index = parseInt(fieldName.replace('schoolresultupload_', ''), 10);
@@ -119,23 +119,23 @@ const handleFileMapping = (req, payload) => {
                 }
                 payload.academicBackground.schools[index] = {
                     ...payload.academicBackground.schools[index],
-                    resultUpload: `/uploads/${file.filename}`,
+                    resultUpload: fileUrl,
                 };
             }
         }
         else if (fieldName.includes('transcript')) {
-            payload.academicBackground.transcriptUpload = `/uploads/${file.filename}`;
+            payload.academicBackground.transcriptUpload = fileUrl;
         }
         else if (fieldName.includes('ielts') || fieldName.includes('languageresult')) {
-            payload.languageProficiency.IELTSresult = `/uploads/${file.filename}`;
+            payload.languageProficiency.IELTSresult = fileUrl;
         }
         else if (fieldName.includes('purpose') || fieldName.includes('sop')) {
-            payload.attachments.statementOfPurpose = `/uploads/${file.filename}`;
+            payload.attachments.statementOfPurpose = fileUrl;
         }
         else if (fieldName.includes('nationalid') || fieldName.includes('idproof') || fieldName.includes('proof')) {
-            payload.attachments.nationalIdProof = `/uploads/${file.filename}`;
+            payload.attachments.nationalIdProof = fileUrl;
         }
-    });
+    }
 
     return payload;
 };
@@ -219,7 +219,7 @@ export const saveApplicationDraft = async (req, res) => {
     try {
         const { applicationId, programId } = req.body;
         let payload = pickDraftPayload(req.body);
-        payload = handleFileMapping(req, payload);
+        payload = await handleFileMapping(req, payload);
 
         payload.userId = req.user._id;
         payload.isDraft = true;
@@ -275,7 +275,7 @@ export const saveApplicationDraft = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
-};  
+}; 
 
 export const getDraftByProgram = async (req, res) => {
     try {
@@ -296,7 +296,7 @@ export const submitVisaApplication = async (req, res) => {
         if (body.personalInfo) body.personalInfo = normalizePersonalInfo(body.personalInfo);
 
         let payload = pickDraftPayload(body);
-        payload = handleFileMapping(req, payload);
+        payload = await handleFileMapping(req, payload);
 
         const mergedBody = {
             ...body,
@@ -352,17 +352,10 @@ export const submitDraftApplication = async (req, res) => {
             return res.status(404).json({ success: false, message: "Application not found" });
         }
 
-        // 1. Convert the existing database record to a clean object
         const merged = application.toObject();
-        
-        // 2. Extract incoming text adjustments from the request body
         let payload = pickDraftPayload(req.body);
-        
-        // 3. Process any freshly uploaded file frames
-        payload = handleFileMapping(req, payload);
+        payload = await handleFileMapping(req, payload);
 
-        // 4. FALLBACK SAFETY MERGE: 
-        // If the database already has the files from your saved draft, USE THEM!
         const finalAttachments = {
             statementOfPurpose: application.attachments?.statementOfPurpose || "",
             nationalIdProof: application.attachments?.nationalIdProof || "",
@@ -371,7 +364,6 @@ export const submitDraftApplication = async (req, res) => {
             lettersOfRecommendation: application.attachments?.lettersOfRecommendation || []
         };
 
-        // If fresh files were uploaded right now, let them overwrite the old database fallback strings
         if (payload.attachments) {
             if (payload.attachments.statementOfPurpose) finalAttachments.statementOfPurpose = payload.attachments.statementOfPurpose;
             if (payload.attachments.nationalIdProof) finalAttachments.nationalIdProof = payload.attachments.nationalIdProof;
@@ -379,7 +371,6 @@ export const submitDraftApplication = async (req, res) => {
             if (payload.attachments.passportCopyUpload) finalAttachments.passportCopyUpload = payload.attachments.passportCopyUpload;
         }
 
-        // Check if the frontend passed text/strings through the body instead
         if (req.body.attachments?.statementOfPurpose && typeof req.body.attachments.statementOfPurpose === 'string' && req.body.attachments.statementOfPurpose.trim() !== '') {
             finalAttachments.statementOfPurpose = req.body.attachments.statementOfPurpose;
         }
@@ -390,7 +381,6 @@ export const submitDraftApplication = async (req, res) => {
             finalAttachments.nationalIdProof = req.body.attachments.nationalIdProof;
         }
 
-        // 5. Build final target structure for validation
         const body = { 
             ...merged, 
             ...payload,
@@ -419,17 +409,15 @@ export const submitDraftApplication = async (req, res) => {
             body.personalInfo = normalizePersonalInfo({ ...merged.personalInfo, ...req.body.personalInfo });
         }
 
-        // 6. Run the application validator script
         const errors = validateApplicationSubmit(body);
         if (errors.length) {
             return res.status(400).json({ 
                 success: false, 
                 message: errors.join(". "),
-                debugDatabaseRecord: application.attachments // Shows you what files are actually inside MongoDB right now
+                debugDatabaseRecord: application.attachments 
             });
         }
 
-        // 7. Success! Save and update status fields
         const finalPayload = pickDraftPayload(body);
         finalPayload.attachments = finalAttachments;
         finalPayload.academicBackground = body.academicBackground;
@@ -535,12 +523,13 @@ export const updateVisaApplication = async (req, res) => {
         }
 
         let payload = pickDraftPayload(req.body);
-        payload = handleFileMapping(req, payload);
+        payload = await handleFileMapping(req, payload);
         payload = mergeDraftWithExisting(application, payload);
 
         if (payload.personalInfo) {
             payload.personalInfo = normalizePersonalInfo({
                 ...application.personalInfo?.toObject?.() || application.personalInfo,
+                ...payload.payload, // Corrected fallback reference
                 ...payload.personalInfo,
             });
         }
