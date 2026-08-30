@@ -12,6 +12,7 @@ import Whyrouter from "./Routes/WhyCountriesRoute.js";
 import Userrouter from "./Routes/UserSignRoute.js";
 import Applyrouter from "./Routes/ApplyViaUsRoute.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
+import passportroutes from "./passport.js"
 
 dotenv.config();
 const app = express();
@@ -112,6 +113,7 @@ app.use(helmet({
 app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use("/api/auth", requireDb, passportRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/api/health", (req, res) => {
