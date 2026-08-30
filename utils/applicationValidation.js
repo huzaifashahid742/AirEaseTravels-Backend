@@ -68,7 +68,6 @@ export const validateApplicationSubmit = (body) => {
     if (!f.passportExpiryDate) errors.push("Passport expiry date is required");
 
     if (!att.resumeCv?.trim()) errors.push("Resume / CV is required");
-    if (!att.statementOfPurpose?.trim()) errors.push("Statement of purpose is required");
     if (!att.passportCopyUpload?.trim()) errors.push("Passport copy is required");
     if (!att.nationalIdProof?.trim()) errors.push("National ID proof is required");
 
