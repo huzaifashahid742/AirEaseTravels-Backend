@@ -131,8 +131,8 @@ app.get("/api/health", (req, res) => {
 app.use("/api/universities", requireDb, router);
 app.use("/api/programs", requireDb, Programrouter);
 app.use("/api/country-details", requireDb, Whyrouter);
-app.use("/api/auth", requireDb, Userrouter);
 app.use("/api/auth", requireDb, passportroutes);
+app.use("/api/auth", requireDb, Userrouter);
 app.use("/api/visa-applications", requireDb, Applyrouter);
 app.use(notFound);
 app.use(errorHandler);
