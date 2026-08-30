@@ -1,7 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import User from '../Backend/Modals/UserSign.js'; // Ensure .js extension is included for ES modules
+import User from './Modals/UserSign.js'; // Ensure .js extension is included for ES modules
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
