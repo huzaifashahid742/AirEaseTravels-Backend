@@ -12,7 +12,7 @@ import Whyrouter from "./Routes/WhyCountriesRoute.js";
 import Userrouter from "./Routes/UserSignRoute.js";
 import Applyrouter from "./Routes/ApplyViaUsRoute.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
-import passportroutes from "./passport.js"
+const passportroutes = require('./passport.js');
 
 dotenv.config();
 const app = express();
