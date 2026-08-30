@@ -114,6 +114,7 @@ app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", requireDb, passportRoutes);
+app.use(passport.initialize());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/api/health", (req, res) => {
