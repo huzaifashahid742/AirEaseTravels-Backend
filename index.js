@@ -113,7 +113,6 @@ app.use(helmet({
 app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use("/api/auth", requireDb, passportRoutes);
 app.use(passport.initialize());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
@@ -132,6 +131,7 @@ app.use("/api/universities", requireDb, router);
 app.use("/api/programs", requireDb, Programrouter);
 app.use("/api/country-details", requireDb, Whyrouter);
 app.use("/api/auth", requireDb, Userrouter);
+app.use("/api/auth", requireDb, passportroutes);
 app.use("/api/visa-applications", requireDb, Applyrouter);
 app.use(notFound);
 app.use(errorHandler);
