@@ -53,7 +53,7 @@ router.get('/google/callback',
       res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/dashboard`);
     } else {
       // New user via Google -> Send to profile setup page
-      res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/profile`);
+      res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/user/profile`);
     }
     
     // res.redirect(`${frontendURL}/auth-success?token=${token}`);
