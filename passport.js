@@ -48,8 +48,15 @@ router.get('/google/callback',
     const frontendURL = process.env.NODE_ENV === 'production' 
       ? 'https://aireasetravelstours.vercel.app' 
       : 'http://localhost:3000';
+      if (req.user.isProfileComplete) {
+      // Existing user -> Send to dashboard
+      res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/dashboard`);
+    } else {
+      // New user via Google -> Send to profile setup page
+      res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/profile`);
+    }
     
-    res.redirect(`${frontendURL}/auth-success?token=${token}`);
+    // res.redirect(`${frontendURL}/auth-success?token=${token}`);
   }
 );
 
