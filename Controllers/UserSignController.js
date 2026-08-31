@@ -148,7 +148,13 @@ export const updateUserProfile = async (req, res) => {
             "countryOfResidence", "permanentAddress", "currentAddress", "passportNumber",
         ];
 
-        const existingProfile = req.user.profile?.toObject?.() || req.user.profile || {};
+        // Fetch the actual Mongoose document instance so pre-save hooks execute properly
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const existingProfile = user.profile?.toObject?.() || user.profile || {};
         const profileUpdates = { ...existingProfile };
 
         profileFieldKeys.forEach((key) => {
@@ -171,25 +177,25 @@ export const updateUserProfile = async (req, res) => {
             profileUpdates.profilePhoto = cloudinaryResult.secure_url;
         }
 
-        const updates = { 
-            profile: profileUpdates,
-            isProfileComplete: true
-         };
+        user.profile = profileUpdates;
+        user.isProfileComplete = true;
 
         if (req.body.name?.trim()) {
-            updates.name = req.body.name.trim();
+            user.name = req.body.name.trim();
         } else if (profileUpdates.firstName !== undefined || profileUpdates.lastName !== undefined) {
             const fName = profileUpdates.firstName ?? existingProfile.firstName ?? "";
             const lName = profileUpdates.lastName ?? existingProfile.lastName ?? "";
             const mName = profileUpdates.middleName ?? existingProfile.middleName ?? "";
-            updates.name = [fName, mName, lName].filter(Boolean).join(" ").trim() || req.user.name;
+            user.name = [fName, mName, lName].filter(Boolean).join(" ").trim() || user.name;
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { $set: updates },
-            { new: true, runValidators: true }
-        );
+        // Capture and assign password if provided (triggers pre-save bcrypt hashing hook)
+        const { password } = req.body;
+        if (password && String(password).trim().length >= 6) {
+            user.password = String(password).trim();
+        }
+
+        await user.save();
 
         res.status(200).json({
             success: true,
@@ -200,6 +206,7 @@ export const updateUserProfile = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+
 export const completeProfile = async (req, res) => {
     try {
         const profileFieldKeys = [
@@ -208,7 +215,13 @@ export const completeProfile = async (req, res) => {
             "countryOfResidence", "permanentAddress", "currentAddress", "passportNumber",
         ];
 
-        const existingProfile = req.user.profile?.toObject?.() || req.user.profile || {};
+        // Fetch the actual Mongoose document instance so we can trigger pre-save hooks safely
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const existingProfile = user.profile?.toObject?.() || user.profile || {};
         const profileUpdates = { ...existingProfile };
 
         profileFieldKeys.forEach((key) => {
@@ -231,12 +244,6 @@ export const completeProfile = async (req, res) => {
             profileUpdates.profilePhoto = cloudinaryResult.secure_url;
         }
 
-        // Fetch the actual Mongoose document instance so we can trigger pre-save hooks safely
-        const user = await User.findById(req.user._id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-
         user.profile = profileUpdates;
         user.isProfileComplete = true; // Mark onboarding as successfully finished
 
@@ -244,7 +251,7 @@ export const completeProfile = async (req, res) => {
             user.name = req.body.name.trim();
         }
 
-        // 🔴 If the user submitted a password during profile completion, assign it.
+        // If the user submitted a password during profile completion, assign it.
         // The Mongoose pre-save schema middleware will automatically salt and hash it!
         const { password } = req.body;
         if (password && String(password).trim().length >= 6) {
@@ -262,6 +269,7 @@ export const completeProfile = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+
 export const listUsersForTeam = async (req, res) => {
     try {
         const users = await User.find()
