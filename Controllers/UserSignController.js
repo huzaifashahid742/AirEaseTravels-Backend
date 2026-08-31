@@ -171,7 +171,10 @@ export const updateUserProfile = async (req, res) => {
             profileUpdates.profilePhoto = cloudinaryResult.secure_url;
         }
 
-        const updates = { profile: profileUpdates };
+        const updates = { 
+            profile: profileUpdates,
+            isProfileComplete: true
+         };
 
         if (req.body.name?.trim()) {
             updates.name = req.body.name.trim();
