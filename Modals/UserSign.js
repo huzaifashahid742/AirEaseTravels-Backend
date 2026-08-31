@@ -42,8 +42,16 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            // required: [true, "Password is required"],
             minlength: [6, "Password must be at least 6 characters long"],
+        },
+        // 🔴 Add these two fields for Google OAuth
+        googleId: { type: String, unique: true, sparse: true },
+        isProfileComplete: {
+            type: Boolean,
+            default: function() {
+                // True if they signed up with a password, false if they came via Google
+                return !!this.password;
+            }
         },
         role: {
             type: String,

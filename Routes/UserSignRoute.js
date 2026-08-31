@@ -4,6 +4,7 @@ import {
     signinUser,
     signupUser,
     updateUserProfile,
+    completeProfile, // 🔴 1. Import completeProfile here
     listUsersForTeam,
     updateUserRole,
     inviteStaffMember,
@@ -18,11 +19,13 @@ import { uploadProfilePhoto } from "../middleware/uploadMiddleware.js";
 
 const Userrouter = express.Router();
 
-// Userrouter.post("/signup",uploadProfilePhoto, authRateLimit, signupUser);
 Userrouter.post("/signup", authRateLimit, uploadProfilePhoto, signupUser);
 Userrouter.post("/signin", authRateLimit, signinUser);
 Userrouter.get("/me", protect, getCurrentUser);
-Userrouter.put("/profile", protect, uploadProfilePhoto , updateUserProfile);
+Userrouter.put("/profile", protect, uploadProfilePhoto, updateUserProfile);
+
+// 🔴 2. Add the route for Google OAuth first-time profile completion
+Userrouter.put("/complete-profile", protect, uploadProfilePhoto, completeProfile);
 
 Userrouter.get("/team", protect, authorizePermission("manageTeam"), listUsersForTeam);
 Userrouter.patch("/team/:id/role", protect, authorizePermission("manageTeam"), updateUserRole);

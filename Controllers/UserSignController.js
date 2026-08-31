@@ -196,6 +196,61 @@ export const updateUserProfile = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+export const completeProfile = async (req, res) => {
+    try {
+        const profileFieldKeys = [
+            "firstName", "lastName", "middleName", "occupation", "currentEducation",
+            "phone", "whatsapp", "dateOfBirth", "currentAge", "gender", "nationality",
+            "countryOfResidence", "permanentAddress", "currentAddress", "passportNumber",
+        ];
+
+        const existingProfile = req.user.profile?.toObject?.() || req.user.profile || {};
+        const profileUpdates = { ...existingProfile };
+
+        profileFieldKeys.forEach((key) => {
+            if (req.body[key] !== undefined && req.body[key] !== "") {
+                profileUpdates[key] = req.body[key];
+            }
+        });
+
+        if (req.body.skills !== undefined) {
+            const rawSkills = req.body.skills;
+            if (Array.isArray(rawSkills)) {
+                profileUpdates.skills = rawSkills.map((s) => String(s).trim()).filter(Boolean);
+            } else if (typeof rawSkills === "string") {
+                profileUpdates.skills = rawSkills.split(",").map((s) => s.trim()).filter(Boolean);
+            }
+        }
+
+        if (req.file) {
+            const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "user-profiles");
+            profileUpdates.profilePhoto = cloudinaryResult.secure_url;
+        }
+
+        const updates = { 
+            profile: profileUpdates,
+            isProfileComplete: true // 🔴 Mark onboarding as successfully finished
+        };
+
+        if (req.body.name?.trim()) {
+            updates.name = req.body.name.trim();
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Profile completed successfully",
+            data: formatUserResponse(user),
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+};
 
 export const listUsersForTeam = async (req, res) => {
     try {
