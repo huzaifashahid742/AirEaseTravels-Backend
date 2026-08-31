@@ -50,7 +50,7 @@ router.get('/google/callback',
       : 'http://localhost:3000';
       if (req.user.isProfileComplete) {
       // Existing user -> Send to dashboard
-      res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/dashboard`);
+      res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/user/dashboard`);
     } else {
       // New user via Google -> Send to profile setup page
       res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/user/profile`);
