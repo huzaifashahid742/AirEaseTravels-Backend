@@ -231,20 +231,27 @@ export const completeProfile = async (req, res) => {
             profileUpdates.profilePhoto = cloudinaryResult.secure_url;
         }
 
-        const updates = { 
-            profile: profileUpdates,
-            isProfileComplete: true // 🔴 Mark onboarding as successfully finished
-        };
-
-        if (req.body.name?.trim()) {
-            updates.name = req.body.name.trim();
+        // Fetch the actual Mongoose document instance so we can trigger pre-save hooks safely
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { $set: updates },
-            { new: true, runValidators: true }
-        );
+        user.profile = profileUpdates;
+        user.isProfileComplete = true; // Mark onboarding as successfully finished
+
+        if (req.body.name?.trim()) {
+            user.name = req.body.name.trim();
+        }
+
+        // 🔴 If the user submitted a password during profile completion, assign it.
+        // The Mongoose pre-save schema middleware will automatically salt and hash it!
+        const { password } = req.body;
+        if (password && String(password).trim().length >= 6) {
+            user.password = String(password).trim();
+        }
+
+        await user.save();
 
         res.status(200).json({
             success: true,
@@ -255,7 +262,6 @@ export const completeProfile = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
-
 export const listUsersForTeam = async (req, res) => {
     try {
         const users = await User.find()
