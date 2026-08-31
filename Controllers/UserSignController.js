@@ -36,6 +36,7 @@ const formatUserResponse = (user) => ({
     name: user.name,
     email: user.email,
     role: user.role || ROLES.USER,
+    isProfileComplete: user.isProfileComplete || false,
     profile: user.profile || {},
 });
 
