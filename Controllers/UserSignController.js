@@ -23,13 +23,15 @@ import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 const generateToken = (id) =>
     jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
-// Configure Nodemailer transporter (Ensure EMAIL_USER and EMAIL_PASS are in your .env)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    family: 4, // 👈 Forces IPv4 and bypasses the ENETUNREACH network error
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
+        pass: process.env.EMAIL_PASS,
+    },
 });
 
 const splitName = (fullName) => {
