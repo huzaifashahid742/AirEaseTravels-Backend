@@ -31,6 +31,8 @@ const hasJwt = logEnv("JWT_SECRET");
 const hasCors = logEnv("CORS_ORIGIN");
 logEnv("FRONTEND_URL");
 logEnv("PORT");
+logEnv("EMAIL_USER"); // 👈 Add this
+logEnv("EMAIL_PASS"); // 👈 Add this
 
 if (!hasMongo || !hasJwt) {
     console.error(
