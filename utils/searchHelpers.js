@@ -10,3 +10,4 @@ export const exactRegex = (value) => ({
     $regex: `^${escapeRegex(String(value).trim())}$`,
     $options: "i",
 });
+  

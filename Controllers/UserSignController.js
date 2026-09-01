@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
-    family: 4, // 👈 Forces IPv4 and bypasses the ENETUNREACH network error
+    family: 4,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -149,17 +149,13 @@ export const requestPasswordOtp = async (req, res) => {
         const user = await User.findById(req.user._id);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-        // Generate 6 digit code
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Hash code and set 10 minute expiration
         user.passwordResetOtp = crypto.createHash('sha256').update(otp).digest('hex');
         user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-        console.log("Attempting to send email via Resend...");
 
-        // Send Email via Resend API (bypasses Railway SMTP blocks)
         const emailResult = await resend.emails.send({
             from: 'AirEase Travels <onboarding@resend.dev>',
             to: user.email,

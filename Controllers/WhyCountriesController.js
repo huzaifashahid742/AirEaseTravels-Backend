@@ -3,7 +3,6 @@ import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const createCountryDetail = async (req, res) => {
     try {
-        // Safely fallback to an empty object if req.body is undefined
         const body = req.body || {};
 
         const {
@@ -45,7 +44,6 @@ export const createCountryDetail = async (req, res) => {
             return res.status(400).json({ success: false, message: "A profile for this country already exists" });
         }
 
-        // Normalize intakeSeasons to guarantee an array format
         let processedSeasons = intakeSeasons;
         if (!Array.isArray(processedSeasons)) {
             processedSeasons = typeof processedSeasons === 'string' 
@@ -75,7 +73,6 @@ export const createCountryDetail = async (req, res) => {
             data: detailEntry,
         });
     } catch (error) {
-        console.error("CREATE COUNTRY ERROR:", error);
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
@@ -144,7 +141,7 @@ export const getCountryDetails = async (req, res) => {
 
 export const updateCountryDetail = async (req, res) => {
     try {
-        // Safely fallback to an empty object if req.body is undefined
+
         const body = req.body || {};
 
         const { id } = req.params;

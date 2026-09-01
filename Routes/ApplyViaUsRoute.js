@@ -11,13 +11,11 @@ import {
     updateVisaApplication,
 } from "../Controllers/ApplyViaUsController.js";
 import { authorizePermission, protect } from "../middleware/authMiddleware.js";
-import { upload } from "../middleware/uploadMiddleware.js"; // Use your shared memory-storage multer middleware
+import { upload } from "../middleware/uploadMiddleware.js";
 
 const Applyrouter = express.Router();
 
 const uploadFields = upload.any();
-
-// Middleware: Fixes empty req.body when using FormData objects
 const parseFormDataBody = (req, res, next) => {
     if (!req.body) return next();
     
@@ -36,14 +34,11 @@ const parseFormDataBody = (req, res, next) => {
             try {
                 req.body[field] = JSON.parse(req.body[field]);
             } catch (e) {
-                // If it's not a JSON string, leave it alone
             }
         }
     });
     next();
 };
-
-// --- ROUTES ---
 
 Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
 Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submitDraftApplication);

@@ -10,7 +10,6 @@ export const errorHandler = (err, req, res, next) => {
         return next(err);
     }
 
-    // 🔴 FIX: Handle Multer-specific errors cleanly so they return 400 instead of a crashing 500
     if (err instanceof multer.MulterError) {
         let message = err.message;
         if (err.code === "LIMIT_FILE_SIZE") {

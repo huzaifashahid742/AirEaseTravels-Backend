@@ -66,7 +66,7 @@ export const getAssignableRolesFor = (actorRole) => {
             { value: ROLES.ADMISSIONS, label: ROLE_LABELS[ROLES.ADMISSIONS] },
             { value: ROLES.CONTENT, label: ROLE_LABELS[ROLES.CONTENT] },
         ];
-    }
+    } 
     return [];
 };
 

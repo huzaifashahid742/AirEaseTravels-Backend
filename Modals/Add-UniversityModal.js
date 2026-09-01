@@ -11,7 +11,7 @@ const universitySchema = new mongoose.Schema(
         slug: {
             type: String,
             lowercase: true,
-            unique: true, // Optimizes B-tree index lookups for lightning-fast frontend URL route scanning
+            unique: true, 
         },
         country: {
             type: String,
@@ -27,7 +27,7 @@ const universitySchema = new mongoose.Schema(
             type: Number,
             required: [true, "Program count is required"],
             min: [0, "Program count cannot be negative"],
-            default: 0,
+            default: 1,
         },
         universityType: {
             type: String,
@@ -40,7 +40,6 @@ const universitySchema = new mongoose.Schema(
         logo: {
             type: String,
             default: "",
-            // Stores base64 data URL (data:image/...) or external URL — served to frontend as-is
         },
         status: {
             type: String,
@@ -67,7 +66,6 @@ const universitySchema = new mongoose.Schema(
     }
 );
 
-// Auto-generate university slug before save (Mongoose 9+ — no next callback)
 universitySchema.pre("save", function () {
     if (this.isModified("universityName") || !this.slug) {
         this.slug = this.universityName

@@ -17,34 +17,32 @@ import passportroutes from './passport.js';
 
 dotenv.config();
 const app = express();
+app.set('trust proxy', 1);
 
 const logEnv = (name) => {
     const value = process.env[name];
     const status = value ? "set" : "MISSING";
-    console.log(`${name}: ${status}`.yellow);
     return Boolean(value);
 };
 
-console.log("Environment check:".yellow);
 const hasMongo = logEnv("MONGO_URI");
 const hasJwt = logEnv("JWT_SECRET");
 const hasCors = logEnv("CORS_ORIGIN");
 logEnv("FRONTEND_URL");
 logEnv("PORT");
-logEnv("EMAIL_USER"); // 👈 Add this
-logEnv("EMAIL_PASS"); // 👈 Add this
+logEnv("EMAIL_USER");
+logEnv("EMAIL_PASS");
 
 if (!hasMongo || !hasJwt) {
     console.error(
-        "Required Railway variables missing on THIS service. Shared Variables with a yellow ! are not linked yet — click SHARE and select AirEaseTravels-Backend.".red.bold
+        "Error.".red.bold
     );
 }
 if (!hasCors) {
-    console.warn("CORS_ORIGIN not set; allowing aireasetravelstours*.vercel.app via code fallback.".yellow);
+    console.warn("CORS ORIGIN Error.".yellow);
 }
 
 if (!process.env.JWT_SECRET) {
-    console.error("JWT_SECRET is required in Railway service variables.".red.bold);
     process.exit(1);
 }
 

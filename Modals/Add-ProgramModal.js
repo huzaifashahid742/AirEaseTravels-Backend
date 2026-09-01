@@ -14,7 +14,7 @@ const programSchema = new mongoose.Schema(
         },
         universityId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "University", // Cross-connects programs directly with their specific institution
+            ref: "University",
             required: [true, "A program must be explicitly mapped to a university"],
         },
         tuitionFee: {
@@ -23,7 +23,7 @@ const programSchema = new mongoose.Schema(
             min: [0, "Tuition fee cannot be negative"],
         },
         duration: {
-            type: String, // e.g., "2 Years", "3 Years"
+            type: String,
             required: [true, "Duration is required"],
             trim: true,
         },
@@ -82,7 +82,6 @@ const programSchema = new mongoose.Schema(
     validate: {
         validator: function (v) {
             if (!v) return false;
-            // Check if the year string has length of exactly 4 digits
             const year = new Date(v).getFullYear().toString();
             return /^\d{4}$/.test(year);
         },
@@ -105,7 +104,6 @@ const programSchema = new mongoose.Schema(
     }
 );
 
-// Auto-generate program slug before save (Mongoose 9+ — no next callback)
 programSchema.pre("save", function () {
     if (this.isModified("programName") || !this.slug) {
         this.slug = this.programName

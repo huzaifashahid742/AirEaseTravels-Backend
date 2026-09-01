@@ -2,6 +2,15 @@ const buckets = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX = 5;
 
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of buckets.entries()) {
+        if (now - entry.start > WINDOW_MS) {
+            buckets.delete(key);
+        }
+    }
+}, 10 * 60 * 1000);
+
 export const authRateLimit = (req, res, next) => {
     const key = req.ip || "unknown";
     const now = Date.now();

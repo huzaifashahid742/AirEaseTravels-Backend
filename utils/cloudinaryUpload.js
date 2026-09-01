@@ -1,4 +1,4 @@
-import cloudinary from '../Config/cloudinary.js'; // Import your configured instance (adjust path if needed)
+import cloudinary from '../Config/cloudinary.js';
 
 export const uploadToCloudinary = (fileBuffer, folder = "university-logos") => {
     return new Promise((resolve, reject) => {
@@ -9,7 +9,6 @@ export const uploadToCloudinary = (fileBuffer, folder = "university-logos") => {
                 resolve(result);
             }
         );
-        // Write the buffer into the stream and end it
         uploadStream.end(fileBuffer);
     });
 };

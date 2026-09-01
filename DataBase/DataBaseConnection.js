@@ -28,7 +28,7 @@ export const requireDb = (req, res, next) => {
     if (isDbConnected()) return next();
     return res.status(503).json({
         success: false,
-        message: "Database is not connected. Fix MONGO_URI on Railway and redeploy.",
+        message: "Database is not connected.",
         ...(lastDbError && { detail: lastDbError }),
     });
 };
@@ -39,7 +39,7 @@ const connectDB = async ({ retries = 5, delayMs = 5000, silent = false } = {}) =
     const mongoURI = sanitizeMongoUri(process.env.MONGO_URI);
 
     if (!mongoURI) {
-        lastDbError = "MONGO_URI is missing on this Railway service.";
+        lastDbError = "MONGO_URI is missing.";
         if (!silent) console.error(lastDbError.red.bold);
         return false;
     }

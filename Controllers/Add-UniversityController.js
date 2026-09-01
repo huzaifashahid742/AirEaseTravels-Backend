@@ -5,11 +5,6 @@ import { containsRegex, exactRegex } from "../utils/searchHelpers.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const createUniversity = async (req, res) => {
-    // Debug logs placed at the top to track incoming payload and files
-    console.log("--- CREATE UNIVERSITY HIT ---");
-    console.log("REQ.FILE:", req.file);
-    console.log("REQ.BODY:", req.body);
-
     try {
         const { universityName, country, city, programCount, universityType, status, link } = req.body;
         
@@ -21,15 +16,12 @@ export const createUniversity = async (req, res) => {
         if (universityExists) {
             return res.status(400).json({ message: "A university with this name already exists" });
         }
-        
         let logoUrl = "";
         if (req.file) {
             try {
                 const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
-                console.log("CLOUDINARY RESULT:", cloudinaryResult);
                 logoUrl = cloudinaryResult.secure_url;
             } catch (cloudError) {
-                console.error("CLOUDINARY UPLOAD ERROR:", cloudError);
                 return res.status(500).json({ success: false, message: "Failed to upload logo image" });
             }
         }
@@ -51,9 +43,7 @@ export const createUniversity = async (req, res) => {
             message: "University added successfully",
             data: university
         });
-
     } catch (error) {
-        console.error("CREATE UNIVERSITY ERROR:", error);
         res.status(500).json({
             success: false,
             message: error.message || "Server Error"
@@ -148,11 +138,6 @@ export const deleteUniversity = async (req, res) => {
 };
 
 export const updateUniversity = async (req, res) => {
-    // Debug logs placed at the top
-    console.log("--- UPDATE UNIVERSITY HIT ---");
-    console.log("REQ.FILE:", req.file);
-    console.log("REQ.BODY:", req.body);
-
     try {
         const { id } = req.params;
         const { universityName, country, city, programCount, universityType, status, link, removeLogo } = req.body;
@@ -173,10 +158,8 @@ export const updateUniversity = async (req, res) => {
         if (req.file) {
             try {
                 const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "university-logos");
-                console.log("CLOUDINARY UPDATE RESULT:", cloudinaryResult);
                 updatedFields.logo = cloudinaryResult.secure_url;
             } catch (cloudError) {
-                console.error("CLOUDINARY UPLOAD ERROR:", cloudError);
                 return res.status(500).json({ success: false, message: "Failed to upload logo image" });
             }
         } else if (removeLogo === "true") {
@@ -209,7 +192,6 @@ export const updateUniversity = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("UPDATE UNIVERSITY ERROR:", error);
         res.status(500).json({
             success: false,
             message: error.message || "Server Error"

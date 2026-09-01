@@ -1,11 +1,10 @@
 import express from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import User from './Modals/UserSign.js'; // Ensure .js extension is included for ES modules
+import User from './Modals/UserSign.js';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
-
 const generateJWT = (user) => {
   return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
     expiresIn: '7d',
@@ -52,11 +51,8 @@ router.get('/google/callback',
       // Existing user -> Send to dashboard
       res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/user/dashboard`);
     } else {
-      // New user via Google -> Send to profile setup page
       res.redirect(`${frontendURL}/auth-success?token=${token}&redirect=/user/profile`);
     }
-    
-    // res.redirect(`${frontendURL}/auth-success?token=${token}`);
   }
 );
 

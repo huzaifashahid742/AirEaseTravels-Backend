@@ -51,13 +51,13 @@ const countryDetailSchema = new mongoose.Schema(
         },
         intakeSeasons: {
             type: [String], 
-            default: undefined, // FIXED: Prevents default empty array instantiation to let the custom validator work reliably
+            default: undefined,
             required: [true, "At least one intake season must be selected"],
             validate: {
                 validator: function (v) {
                     return Array.isArray(v) && v.length > 0 && v.every(val => ["Fall", "Spring", "Summer", "Winter"].includes(val));
                 },
-                message: "Intake seasons must contain at least one selection and can only consist of 'Fall' and/or 'Spring'",
+                message: "Intake seasons must contain at least one selection.",
             },
         },
         prSettlement: {
@@ -91,8 +91,6 @@ const countryDetailSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-
-// Auto-generate country slug before save (Mongoose 9+ — no next callback)
 countryDetailSchema.pre("save", function () {
     if (this.isModified("countryName") || !this.slug) {
         this.slug = this.countryName

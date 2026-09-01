@@ -20,8 +20,6 @@ export const validateGraduationYear = (year, label = "Year of completion") => {
     }
     return null;
 };
-
-/** Validate mandatory fields before final submission (drafts skip this). */
 export const validateApplicationSubmit = (body) => {
     const errors = [];
     const p = body.personalInfo || {};

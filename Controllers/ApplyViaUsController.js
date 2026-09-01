@@ -87,7 +87,6 @@ const pickDraftPayload = (body) => {
     return payload;
 };
 
-// Updated to asynchronously process buffer uploads via Cloudinary
 const handleFileMapping = async (req, payload) => {
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) return payload;
 
@@ -97,8 +96,7 @@ const handleFileMapping = async (req, payload) => {
 
     for (const file of req.files) {
         const fieldName = file.fieldname.toLowerCase();
-        
-        // Upload buffer to Cloudinary under folder "visa-documents"
+
         const cloudinaryResult = await uploadToCloudinary(file.buffer, "visa-documents");
         const fileUrl = cloudinaryResult.secure_url;
 
@@ -529,7 +527,7 @@ export const updateVisaApplication = async (req, res) => {
         if (payload.personalInfo) {
             payload.personalInfo = normalizePersonalInfo({
                 ...application.personalInfo?.toObject?.() || application.personalInfo,
-                ...payload.payload, // Corrected fallback reference
+                ...payload.payload, 
                 ...payload.personalInfo,
             });
         }

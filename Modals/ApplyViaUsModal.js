@@ -108,7 +108,7 @@ const visaApplicationSchema = new mongoose.Schema(
         },
 
         financialAndVisa: {
-            fundingSource: {
+            fundingSource: { 
                 type: String,
                 enum: ["Self-funded", "Scholarship", "Educational Loan", ""],
                 default: "",

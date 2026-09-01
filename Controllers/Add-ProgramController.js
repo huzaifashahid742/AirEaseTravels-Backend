@@ -51,7 +51,7 @@ export const getProgramById = async (req, res) => {
     try {
         const program = await Program.findById(req.params.id).populate(
             "universityId",
-            "universityName country city logo"
+            "university Name country city logo"
         );
         if (!program) {
             return res.status(404).json({ success: false, message: "Program not found" });
@@ -184,7 +184,6 @@ export const updateProgram = async (req, res) => {
             return res.status(404).json({ success: false, message: "Program document not found" });
         }
 
-        // Handle slug creation if program name changes during modification
         if (dataToUpdate.programName && dataToUpdate.programName !== program.programName) {
             dataToUpdate.slug = dataToUpdate.programName
                 .toLowerCase()
