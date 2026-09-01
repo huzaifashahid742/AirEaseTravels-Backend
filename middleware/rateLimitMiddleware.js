@@ -1,6 +1,6 @@
 const buckets = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
-const MAX = 30;
+const MAX = 5;
 
 export const authRateLimit = (req, res, next) => {
     const key = req.ip || "unknown";
