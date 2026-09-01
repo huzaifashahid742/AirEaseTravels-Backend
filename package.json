@@ -27,6 +27,7 @@
     "nodemon": "^3.1.14",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "resend": "^6.25.0",
     "streamifier": "^0.1.1"
   }
 }

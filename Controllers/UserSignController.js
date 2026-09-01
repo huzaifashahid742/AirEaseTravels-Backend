@@ -2,6 +2,7 @@ import User from "../Modals/UserSign.js";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 import {
     ROLES,
@@ -33,6 +34,7 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS,
     },
 });
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const splitName = (fullName) => {
     const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
@@ -142,7 +144,6 @@ export const getCurrentUser = async (req, res) => {
     return res.status(200).json({ success: true, data: formatUserResponse(req.user) });
 };
 
-// 🔴 Request OTP endpoint when user wants to create/update password
 export const requestPasswordOtp = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -156,22 +157,26 @@ export const requestPasswordOtp = async (req, res) => {
         user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-        console.log("Attempting to send email via Nodemailer. User configured:", process.env.EMAIL_USER ? "Yes" : "No");
+        console.log("Attempting to send email via Resend...");
 
-        // Send Email
-        await transporter.sendMail({
+        // Send Email via Resend API (bypasses Railway SMTP blocks)
+        const emailResult = await resend.emails.send({
+            from: 'AirEase Travels <onboarding@resend.dev>',
             to: user.email,
             subject: 'Security Verification Code for Password Change',
             text: `Your verification code to create or update your password is: ${otp}. This code expires in 10 minutes.`
         });
 
+        if (emailResult.error) {
+            throw new Error(emailResult.error.message);
+        }
+
         res.status(200).json({ success: true, message: "Verification code sent to your email." });
     } catch (error) {
-        console.error("NODEMAILER CRITICAL ERROR:", error); // 👈 This will print the exact Google/SMTP failure in Railway logs
+        console.error("RESEND CRITICAL ERROR:", error);
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
-
 export const updateUserProfile = async (req, res) => {
     try {
         const profileFieldKeys = [
