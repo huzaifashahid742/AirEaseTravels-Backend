@@ -4,7 +4,8 @@ import {
     signinUser,
     signupUser,
     updateUserProfile,
-    completeProfile, // 🔴 1. Import completeProfile here
+    completeProfile,
+    requestPasswordOtp, // 🔴 Import the new controller
     listUsersForTeam,
     updateUserRole,
     inviteStaffMember,
@@ -22,9 +23,11 @@ const Userrouter = express.Router();
 Userrouter.post("/signup", authRateLimit, uploadProfilePhoto, signupUser);
 Userrouter.post("/signin", authRateLimit, signinUser);
 Userrouter.get("/me", protect, getCurrentUser);
-Userrouter.put("/profile", protect, uploadProfilePhoto, updateUserProfile);
 
-// 🔴 2. Add the route for Google OAuth first-time profile completion
+// 🔴 Route for requesting password verification code via email
+Userrouter.post("/request-password-otp", protect, requestPasswordOtp);
+
+Userrouter.put("/profile", protect, uploadProfilePhoto, updateUserProfile);
 Userrouter.put("/complete-profile", protect, uploadProfilePhoto, completeProfile);
 
 Userrouter.get("/team", protect, authorizePermission("manageTeam"), listUsersForTeam);

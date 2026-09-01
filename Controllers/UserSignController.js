@@ -1,5 +1,7 @@
 import User from "../Modals/UserSign.js";
 import mongoose from "mongoose";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 import {
     ROLES,
     ROLE_LABELS,
@@ -15,10 +17,19 @@ import {
 } from "../constants/roles.js";
 import VisaApplication from "../Modals/ApplyViaUsModal.js";
 import jwt from "jsonwebtoken";
-import { uploadToCloudinary } from "../utils/cloudinaryUpload.js"; // Import Cloudinary helper
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 const generateToken = (id) =>
     jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+
+// Configure Nodemailer transporter (Ensure EMAIL_USER and EMAIL_PASS are in your .env)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 const splitName = (fullName) => {
     const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
@@ -43,21 +54,9 @@ const formatUserResponse = (user) => ({
 export const signupUser = async (req, res) => {
     try {
         const { 
-            name, 
-            email, 
-            password, 
-            firstName, 
-            lastName, 
-            occupation, 
-            currentEducation, 
-            phone, 
-            dateOfBirth, 
-            currentAge, 
-            gender, 
-            nationality, 
-            countryOfResidence, 
-            passportNumber, 
-            currentAddress 
+            name, email, password, firstName, lastName, occupation, 
+            currentEducation, phone, dateOfBirth, currentAge, gender, 
+            nationality, countryOfResidence, passportNumber, currentAddress 
         } = req.body;
 
         const normalizedEmail = String(email || "").toLowerCase().trim();
@@ -70,7 +69,6 @@ export const signupUser = async (req, res) => {
             return res.status(400).json({ success: false, message: "A user with this email already exists" });
         }
         
-        // Upload profile photo buffer to Cloudinary if file exists
         let profilePhotoUrl = "";
         if (req.file) {
             const cloudinaryResult = await uploadToCloudinary(req.file.buffer, "user-profiles");
@@ -81,6 +79,7 @@ export const signupUser = async (req, res) => {
             name: name.trim(),
             email: normalizedEmail,
             password,
+            hasLocalPassword: true,
             role: ROLES.USER,
             profile: {
                 ...splitName(name),
@@ -140,6 +139,33 @@ export const getCurrentUser = async (req, res) => {
     return res.status(200).json({ success: true, data: formatUserResponse(req.user) });
 };
 
+// 🔴 Request OTP endpoint when user wants to create/update password
+export const requestPasswordOtp = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        // Generate 6 digit code
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Hash code and set 10 minute expiration
+        user.passwordResetOtp = crypto.createHash('sha256').update(otp).digest('hex');
+        user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        // Send Email
+        await transporter.sendMail({
+            to: user.email,
+            subject: 'Security Verification Code for Password Change',
+            text: `Your verification code to create or update your password is: ${otp}. This code expires in 10 minutes.`
+        });
+
+        res.status(200).json({ success: true, message: "Verification code sent to your email." });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+};
+
 export const updateUserProfile = async (req, res) => {
     try {
         const profileFieldKeys = [
@@ -148,7 +174,6 @@ export const updateUserProfile = async (req, res) => {
             "countryOfResidence", "permanentAddress", "currentAddress", "passportNumber",
         ];
 
-        // Fetch the actual Mongoose document instance so pre-save hooks execute properly
         const user = await User.findById(req.user._id);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -189,17 +214,34 @@ export const updateUserProfile = async (req, res) => {
             user.name = [fName, mName, lName].filter(Boolean).join(" ").trim() || user.name;
         }
 
-        // Capture and assign password if provided (triggers pre-save bcrypt hashing hook)
-        const { password } = req.body;
+        // 🔴 Handle Secure Password Update with OTP Verification
+        const { password, otp } = req.body;
         if (password && String(password).trim().length >= 6) {
+            if (!otp) {
+                return res.status(400).json({ success: false, message: "Verification code is required to set or update your password." });
+            }
+
+            const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+            if (
+                !user.passwordResetOtp ||
+                user.passwordResetOtp !== hashedOtp ||
+                user.passwordResetExpires < Date.now()
+            ) {
+                return res.status(400).json({ success: false, message: "Invalid or expired verification code." });
+            }
+
             user.password = String(password).trim();
+            user.hasLocalPassword = true;
+            user.passwordResetOtp = undefined;
+            user.passwordResetExpires = undefined;
         }
 
         await user.save();
 
         res.status(200).json({
             success: true,
-            message: "Profile updated",
+            message: "Profile updated successfully",
             data: formatUserResponse(user),
         });
     } catch (error) {
@@ -215,7 +257,6 @@ export const completeProfile = async (req, res) => {
             "countryOfResidence", "permanentAddress", "currentAddress", "passportNumber",
         ];
 
-        // Fetch the actual Mongoose document instance so we can trigger pre-save hooks safely
         const user = await User.findById(req.user._id);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -245,17 +286,17 @@ export const completeProfile = async (req, res) => {
         }
 
         user.profile = profileUpdates;
-        user.isProfileComplete = true; // Mark onboarding as successfully finished
+        user.isProfileComplete = true; 
 
         if (req.body.name?.trim()) {
             user.name = req.body.name.trim();
         }
 
-        // If the user submitted a password during profile completion, assign it.
-        // The Mongoose pre-save schema middleware will automatically salt and hash it!
-        const { password } = req.body;
+        const { password, otp } = req.body;
         if (password && String(password).trim().length >= 6) {
+            // If they are setting a password during completion from Google, you can optionally require OTP or allow it directly if it's their very first setup.
             user.password = String(password).trim();
+            user.hasLocalPassword = true;
         }
 
         await user.save();
@@ -292,11 +333,7 @@ export const listUsersForTeam = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: {
-                staff,
-                students,
-                all: users.map(formatMember),
-            },
+            data: { staff, students, all: users.map(formatMember) },
             assignableRoles: getAssignableRolesFor(req.user.role),
             inviteableRoles: getInviteableRolesFor(req.user.role),
             permissions: PERMISSIONS,
@@ -378,9 +415,7 @@ export const removeStaffMember = async (req, res) => {
 
 export const getAllStudents = async (req, res) => {
     try {
-        const students = await User.find({ 
-            role: { $regex: /^user$/i } 
-        })
+        const students = await User.find({ role: { $regex: /^user$/i } })
         .select("-password")
         .sort({ createdAt: -1 })
         .lean();
@@ -400,26 +435,18 @@ export const getAllStudents = async (req, res) => {
             data: formattedStudents
         });
     } catch (error) {
-        return res.status(500).json({ 
-            success: false, 
-            message: error.message || "Failed to fetch students" 
-        });
+        return res.status(500).json({ success: false, message: error.message || "Failed to fetch students" });
     }
 };
 
 export const getStudentById = async (req, res) => {
     try {
-        const student = await User.findOne({ 
-            _id: req.params.id, 
-            role: { $regex: /^user$/i } 
-        }).select("-password");
-        
+        const student = await User.findOne({ _id: req.params.id, role: { $regex: /^user$/i } }).select("-password");
         if (!student) {
             return res.status(404).json({ success: false, message: "Student not found" });
         }
         res.status(200).json({ success: true, data: formatUserResponse(student) });
-    }
-    catch (error) {
+    } catch (error) {
         res.status(500).json({ success: false, message: error.message || "Failed to fetch student" });
     }
 };
@@ -458,6 +485,7 @@ export const inviteStaffMember = async (req, res) => {
             name: name.trim(),
             email: normalizedEmail,
             password,
+            hasLocalPassword: true,
             role,
         });
         res.status(201).json({
