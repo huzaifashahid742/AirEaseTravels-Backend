@@ -34,8 +34,8 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS,
     },
 });
-const resend = new Resend(process.env.RESEND_API_KEY);
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 const splitName = (fullName) => {
     const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return { firstName: "", lastName: "" };
@@ -157,7 +157,7 @@ export const requestPasswordOtp = async (req, res) => {
 
 
         const emailResult = await resend.emails.send({
-            from: 'AirEase Travels <onboarding@resend.dev>',
+            from: 'AirEase Travels & Tours',
             to: user.email,
             subject: 'Security Verification Code for Password Change',
             text: `Your verification code to create or update your password is: ${otp}. This code expires in 10 minutes.`

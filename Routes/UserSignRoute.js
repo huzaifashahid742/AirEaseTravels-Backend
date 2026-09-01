@@ -5,7 +5,7 @@ import {
     signupUser,
     updateUserProfile,
     completeProfile,
-    requestPasswordOtp, // 🔴 Import the new controller
+    requestPasswordOtp, 
     listUsersForTeam,
     updateUserRole,
     inviteStaffMember,
