@@ -157,9 +157,9 @@ export const requestPasswordOtp = async (req, res) => {
 
 
         const emailResult = await resend.emails.send({
-            from: 'AirEase Travels & Tours',
+            from: 'AirEase Travels & Tours <aireasetravels5@gmail.com>',
             to: user.email,
-            subject: 'Security Verification Code for Password Change <email@example.com>',
+            subject: 'Security Verification Code for Password Change',
             text: `Your verification code to create or update your password is: ${otp}. This code expires in 10 minutes.`
         });
 
