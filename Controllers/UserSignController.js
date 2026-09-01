@@ -154,6 +154,8 @@ export const requestPasswordOtp = async (req, res) => {
         user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
+        console.log("Attempting to send email via Nodemailer. User configured:", process.env.EMAIL_USER ? "Yes" : "No");
+
         // Send Email
         await transporter.sendMail({
             to: user.email,
@@ -163,6 +165,7 @@ export const requestPasswordOtp = async (req, res) => {
 
         res.status(200).json({ success: true, message: "Verification code sent to your email." });
     } catch (error) {
+        console.error("NODEMAILER CRITICAL ERROR:", error); // 👈 This will print the exact Google/SMTP failure in Railway logs
         res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
