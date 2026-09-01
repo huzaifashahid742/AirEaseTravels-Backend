@@ -94,7 +94,7 @@ export const getUniversities = async (req, res) => {
         if (status) query.status = exactRegex(status);
 
         const pageNum = Math.max(1, Number(page));
-        const pageSize = Math.max(1, Math.min(100, Number(limit)));
+        const pageSize = Math.max(1, Math.min(6, Number(limit)));
 
         const [items, total] = await Promise.all([
             University.find(query)
