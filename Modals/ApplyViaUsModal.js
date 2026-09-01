@@ -6,16 +6,6 @@ const universityOptionSchema = new mongoose.Schema(
     },
     { _id: false }
 );
-
-const workExperienceSchema = new mongoose.Schema(
-    {
-        company: { type: String, trim: true },
-        role: { type: String, trim: true },
-        duration: { type: String, trim: true },
-    },
-    { _id: false }
-);
-
 const schoolSchema = new mongoose.Schema(
     {
         schoolName: { type: String, trim: true, default: "" },
@@ -35,7 +25,6 @@ const visaApplicationSchema = new mongoose.Schema(
         },
         programName: { type: String, trim: true, default: "" },
         universityName: { type: String, trim: true, default: "" },
-
         currentStep: { type: Number, default: 1, min: 1, max: 8 },
         isDraft: { type: Boolean, default: true },
         submittedAt: { type: Date },
@@ -55,7 +44,6 @@ const visaApplicationSchema = new mongoose.Schema(
             cnic: { type: String, trim: true, default: "" },
             profilePhoto: { type: String, default: "" },
         },
-
         academicBackground: {
             highSchoolName: { type: String, trim: true, default: "" },
             yearOfGraduation: { type: Number },
@@ -64,13 +52,12 @@ const visaApplicationSchema = new mongoose.Schema(
             transcriptUpload: { type: String, default: "" },
             schools: { type: [schoolSchema], default: [] },
         },
-
         languageProficiency: {
-    examType: {
+        examType: {
         type: String,
         enum: ["IELTS", "TOEFL", "PTE", "Not Required", ""],
         default: "Not Required",
-    },
+        },
     score: { 
         type: String, 
         default: "", 
@@ -101,7 +88,6 @@ const visaApplicationSchema = new mongoose.Schema(
         },
 
         experienceInfo: {
-            workHistory: [workExperienceSchema],
             internshipsOrProjects: { type: String, default: "" },
             extracurricularAndLeadership: { type: String, default: "" },
             volunteerExperience: { type: String, default: "" },
@@ -122,12 +108,6 @@ const visaApplicationSchema = new mongoose.Schema(
             lettersOfRecommendation: { type: [String], default: [] },
             passportCopyUpload: { type: String, default: "" },
             nationalIdProof: { type: String, default: "" },
-        },
-
-        applicationStatus: {
-            type: String,
-            enum: ["Draft", "Pending", "Under Review", "Document Missing", "Approved", "Rejected"],
-            default: "Draft",
         },
         userId: {
             type: mongoose.Schema.Types.ObjectId,

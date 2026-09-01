@@ -82,8 +82,7 @@ const programSchema = new mongoose.Schema(
     validate: {
         validator: function (v) {
             if (!v) return false;
-            const year = new Date(v).getFullYear().toString();
-            return /^\d{4}$/.test(year);
+            return v > new Date();
         },
         message: "Application deadline year must be only 4 digits long no more",
     },
@@ -104,13 +103,14 @@ const programSchema = new mongoose.Schema(
     }
 );
 
-programSchema.pre("save", function () {
+programSchema.pre("save", function (next) {
     if (this.isModified("programName") || !this.slug) {
         this.slug = this.programName
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "");
     }
+    next();
 });
 
 const Program = mongoose.model("Program", programSchema);

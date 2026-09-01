@@ -66,13 +66,14 @@ const universitySchema = new mongoose.Schema(
     }
 );
 
-universitySchema.pre("save", function () {
+universitySchema.pre("save", function (next) {
     if (this.isModified("universityName") || !this.slug) {
         this.slug = this.universityName
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "");
     }
+    next();
 });
 
 const University = mongoose.model("University", universitySchema);

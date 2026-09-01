@@ -5,6 +5,7 @@ import User from './Modals/UserSign.js';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
 const generateJWT = (user) => {
   return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
     expiresIn: '7d',

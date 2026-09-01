@@ -12,7 +12,6 @@ export const STAFF_ROLES = [
     ROLES.ADMISSIONS,
     ROLES.CONTENT,
 ];
-
 export const ASSIGNABLE_STAFF_ROLES = [
     ROLES.ADMIN,
     ROLES.ADMISSIONS,

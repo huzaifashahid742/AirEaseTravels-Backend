@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import colors from "colors";
 
 const sanitizeMongoUri = (uri) => {
     let value = String(uri || "").trim();
@@ -13,12 +12,10 @@ const sanitizeMongoUri = (uri) => {
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 let lastDbError = null;
 let reconnectTimer = null;
 
 export const isDbConnected = () => mongoose.connection.readyState === 1;
-
 export const getDbStatus = () => ({
     connected: isDbConnected(),
     lastError: lastDbError,
@@ -46,12 +43,9 @@ const connectDB = async ({ retries = 5, delayMs = 5000, silent = false } = {}) =
 
     const hasPlaceholder = /<(db_)?(username|password)>/i.test(mongoURI);
     if (hasPlaceholder) {
-        lastDbError = "MONGO_URI contains Atlas placeholders (<db_password>). Share real variables to the service.";
+        lastDbError = "Contains Atlas placeholders. Share real variables.";
         if (!silent) {
-            console.error("MONGO_URI still contains Atlas placeholders (<db_password> etc.).".red.bold);
-            console.error(
-                "On Railway: Project Settings -> Shared Variables -> SHARE each variable to AirEaseTravels-Backend.".yellow
-            );
+            console.error("Still contains Atlas placeholders.".red.bold);
         }
         return false;
     }
@@ -78,10 +72,7 @@ const connectDB = async ({ retries = 5, delayMs = 5000, silent = false } = {}) =
 
     if (!silent) {
         console.error(
-            "MongoDB connection failed after all retries. API routes return 503 until DB connects.".red.bold
-        );
-        console.error(
-            "Verify MONGO_URI password in Atlas (case-sensitive) and allow 0.0.0.0/0 in Atlas Network Access.".yellow
+            "MongoDB connection failed. API return 503 until DB connects.".red.bold
         );
     }
     return false;

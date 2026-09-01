@@ -91,13 +91,14 @@ const countryDetailSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-countryDetailSchema.pre("save", function () {
+countryDetailSchema.pre("save", function (next) {
     if (this.isModified("countryName") || !this.slug) {
         this.slug = this.countryName
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "");
     }
+    next();
 });
 
 const CountryDetail = mongoose.model("CountryDetail", countryDetailSchema);
