@@ -59,7 +59,7 @@ const visaApplicationSchema = new mongoose.Schema(
         default: "Not Required",
         },
     score: { 
-        type: String, 
+        type: Number, 
         default: "", 
         trim: true,
         required: function() {
