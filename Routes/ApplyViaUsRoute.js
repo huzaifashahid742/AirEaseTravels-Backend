@@ -59,7 +59,7 @@ Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submit
 
 // --- PARAMETERIZED ROUTES LAST ---
 Applyrouter.get("/:id", protect, getVisaApplicationById);
-Applyrouter.put("/:id", protect, uploadFields, parseFormDataBody, updateVisaApplication); 
+Applyrouter.put("/:id", protect, parseFormDataBody, updateVisaApplication); 
 Applyrouter.delete("/:id", protect, deleteVisaApplication);
 
 export default Applyrouter;
