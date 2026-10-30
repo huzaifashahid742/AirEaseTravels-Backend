@@ -20,6 +20,7 @@ export const validateGraduationYear = (year, label = "Year of completion") => {
     }
     return null;
 };
+
 export const validateApplicationSubmit = (body) => {
     const errors = [];
     const p = body.personalInfo || {};
