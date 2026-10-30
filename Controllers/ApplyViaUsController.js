@@ -335,7 +335,12 @@ export const submitVisaApplication = async (req, res) => {
             data: application,
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message || "Server Error" });
+        console.error("CRASH STACK TRACE:", error); // <-- Print complete stack trace
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Server Error",
+            stack: error.stack // Temporarily return stack for debugging
+        });
     }
 };
 
@@ -437,7 +442,12 @@ export const submitDraftApplication = async (req, res) => {
             data: updated,
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message || "Server Error" });
+        console.error("CRASH STACK TRACE:", error); // <-- Print complete stack trace
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Server Error",
+            stack: error.stack // Temporarily return stack for debugging
+        });
     }
 };
 
