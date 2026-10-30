@@ -44,14 +44,13 @@ Applyrouter.get("/mine", protect, getMyVisaApplications);
 Applyrouter.get("/admin/all", protect, authorizePermission("applications"), getAllVisaApplications);
 Applyrouter.get("/draft/program/:programId", protect, getDraftByProgram);
 
-
-Applyrouter.post("/draft", protect, parseFormDataBody, saveApplicationDraft);
-Applyrouter.post("/", protect, parseFormDataBody, submitVisaApplication);
-Applyrouter.post("/:id/submit", protect, parseFormDataBody, submitDraftApplication);
+Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
+Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
+Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submitDraftApplication);
 
 
 Applyrouter.get("/:id", protect, getVisaApplicationById);
-Applyrouter.put("/:id", protect, parseFormDataBody, updateVisaApplication); 
+Applyrouter.put("/:id", protect, uploadFields, parseFormDataBody, updateVisaApplication);
 Applyrouter.delete("/:id", protect, deleteVisaApplication);
 
 export default Applyrouter;

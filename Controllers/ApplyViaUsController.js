@@ -272,27 +272,17 @@ export const submitDraftApplication = async (req, res) => {
         let payload = pickDraftPayload(req.body);
         payload = await handleFileMapping(req, payload);
 
-        // Build request body with placeholders to pass text-only validation checks cleanly
+        // Merge existing application data with incoming payload
         const body = { 
             ...application.toObject(), 
             ...payload,
-            attachments: {
-                resumeCv: payload.attachments?.resumeCv || application.attachments?.resumeCv || "N/A",
-                passportCopyUpload: payload.attachments?.passportCopyUpload || application.attachments?.passportCopyUpload || "N/A",
-                nationalIdProof: payload.attachments?.nationalIdProof || application.attachments?.nationalIdProof || "N/A",
-                statementOfPurpose: payload.attachments?.statementOfPurpose || application.attachments?.statementOfPurpose || "N/A",
-            },
-            academicBackground: {
-                ...(application.academicBackground || {}),
-                ...(payload.academicBackground || {}),
-                transcriptUpload: payload.academicBackground?.transcriptUpload || application.academicBackground?.transcriptUpload || "N/A",
-            }
         };
 
         if (req.body.personalInfo) {
             body.personalInfo = normalizePersonalInfo({ ...application.personalInfo, ...req.body.personalInfo });
         }
 
+        // Run standard form text validation
         const errors = validateApplicationSubmit(body);
         if (errors.length) {
             return res.status(400).json({ 
@@ -326,7 +316,6 @@ export const submitDraftApplication = async (req, res) => {
         });
     }
 };
-
 export const getAllVisaApplications = async (req, res) => {
     try {
         const applications = await VisaApplication.find({ isDraft: { $ne: true } })
