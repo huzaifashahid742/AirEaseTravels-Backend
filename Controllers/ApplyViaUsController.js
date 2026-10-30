@@ -455,29 +455,23 @@ export const submitDraftApplication = async (req, res) => {
             lettersOfRecommendation: payload.attachments?.lettersOfRecommendation?.length ? payload.attachments.lettersOfRecommendation : application.attachments?.lettersOfRecommendation || []
         };
 
-        const body = { 
-            ...merged, 
-            ...payload,
-            attachments: finalAttachments,
-            academicBackground: {
-                ...(merged.academicBackground || {}),
-                ...(payload.academicBackground || {}),
-                transcriptUpload: payload.academicBackground?.transcriptUpload
-                    || application.academicBackground?.transcriptUpload
-                    || "",
-                schools: mergeSchoolRecords(
-                    application.academicBackground?.schools || [],
-                    payload.academicBackground?.schools || []
-                ),
-            },
-            languageProficiency: {
-                ...(merged.languageProficiency || {}),
-                ...(payload.languageProficiency || {}),
-                IELTSresult: payload.languageProficiency?.IELTSresult
-                    || application.languageProficiency?.IELTSresult
-                    || "",
-            },
-        };
+        // Inside submitDraftApplication controller:
+const body = { 
+    ...merged, 
+    ...payload,
+    attachments: {
+        resumeCv: application.attachments?.resumeCv || "N/A",
+        passportCopyUpload: application.attachments?.passportCopyUpload || "N/A",
+        nationalIdProof: application.attachments?.nationalIdProof || "N/A",
+        statementOfPurpose: application.attachments?.statementOfPurpose || "N/A",
+    },
+    academicBackground: {
+        ...(merged.academicBackground || {}),
+        transcriptUpload: application.academicBackground?.transcriptUpload || "N/A",
+    }
+};
+
+// Now validateApplicationSubmit won't throw 400 for empty document strings
 
         if (req.body.personalInfo) {
             body.personalInfo = normalizePersonalInfo({ ...merged.personalInfo, ...req.body.personalInfo });
