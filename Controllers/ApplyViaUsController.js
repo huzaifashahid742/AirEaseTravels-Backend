@@ -288,61 +288,6 @@ export const getDraftByProgram = async (req, res) => {
     }
 };
 
-// export const submitVisaApplication = async (req, res) => {
-//     try {
-//         const body = { ...req.body };
-//         if (body.personalInfo) body.personalInfo = normalizePersonalInfo(body.personalInfo);
-
-//         let payload = pickDraftPayload(body);
-//         payload = await handleFileMapping(req, payload);
-
-//         const mergedBody = {
-//             ...body,
-//             ...payload,
-//             personalInfo: payload.personalInfo || body.personalInfo,
-//             academicBackground: mergeAcademicBackground(
-//                 body.academicBackground || {},
-//                 payload.academicBackground || {}
-//             ),
-//             languageProficiency: mergeLanguageProficiency(
-//                 body.languageProficiency || {},
-//                 payload.languageProficiency || {}
-//             ),
-//             attachments: mergeAttachments(body.attachments || {}, payload.attachments || {}),
-//             programInterest: mergeProgramInterest(
-//                 body.programInterest || {},
-//                 payload.programInterest || {}
-//             ),
-//         };
-
-//         const errors = validateApplicationSubmit(mergedBody);
-//         if (errors.length) {
-//             return res.status(400).json({ success: false, message: errors.join(". ") });
-//         }
-
-//         const doc = new VisaApplication({
-//             ...payload,
-//             userId: req.user._id,
-//             isDraft: false,
-//             applicationStatus: "Pending",
-//             submittedAt: new Date(),
-//         });
-//         const application = await doc.save({ validateBeforeSave: false });
-
-//         res.status(201).json({
-//             success: true,
-//             message: "Your application was submitted successfully!",
-//             data: application,
-//         });
-//     } catch (error) {
-//         console.error("CRASH STACK TRACE:", error); // <-- Print complete stack trace
-//         res.status(500).json({ 
-//             success: false, 
-//             message: error.message || "Server Error",
-//             stack: error.stack // Temporarily return stack for debugging
-//         });
-//     }
-// };
 export const submitVisaApplication = async (req, res) => {
     try {
         const { id } = req.params;
@@ -363,7 +308,6 @@ export const submitVisaApplication = async (req, res) => {
         return res.status(200).json({ success: true, data: updatedApplication });
     } catch (error) {
         console.error("Submission Error:", error);
-        // Return the exact Mongoose validation or server error message to frontend/logs
         return res.status(500).json({ 
             success: false, 
             message: error.message || "Internal Server Error" 
@@ -469,11 +413,11 @@ export const submitDraftApplication = async (req, res) => {
             data: updated,
         });
     } catch (error) {
-        console.error("CRASH STACK TRACE:", error); // <-- Print complete stack trace
-        res.status(233300).json({ 
+        console.error("CRASH STACK TRACE:", error);
+        res.status(500).json({ 
             success: false, 
             message: error.message || "Server Error",
-            stack: error.stack // Temporarily return stack for debugging
+            stack: error.stack 
         });
     }
 };
@@ -564,8 +508,7 @@ export const updateVisaApplication = async (req, res) => {
         if (payload.personalInfo) {
             payload.personalInfo = normalizePersonalInfo({
                 ...application.personalInfo?.toObject?.() || application.personalInfo,
-                ...payload.payload, 
-                ...payload.personalInfo,
+                ...payload.personalInfo, 
             });
         }
 
