@@ -482,7 +482,7 @@ const body = {
             return res.status(400).json({ 
                 success: false, 
                 message: errors.join(". "),
-                debugDatabaseRecord: application.attachments 
+                // debugDatabaseRecord: application.attachments 
             });
         }
 
