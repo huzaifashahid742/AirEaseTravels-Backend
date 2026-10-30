@@ -63,7 +63,7 @@ const visaApplicationSchema = new mongoose.Schema(
         default: "", 
         trim: true,
         required: function() {
-            return this.languageProficiency?.examType && this.languageProficiency.examType !== "Not Required";
+            return this.examType && this.examType !== "Not Required";
         }
     },
     examDateOrExpiry: { type: String, default: "", trim: true },
