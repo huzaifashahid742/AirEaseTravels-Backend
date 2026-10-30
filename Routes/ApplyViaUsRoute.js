@@ -40,13 +40,17 @@ const parseFormDataBody = (req, res, next) => {
     next();
 };
 
-Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
-Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submitDraftApplication);
-Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
-
-Applyrouter.get("/draft/program/:programId", protect, getDraftByProgram);
-Applyrouter.get("/admin/all", protect, authorizePermission("applications"), getAllVisaApplications);
+// --- STATIC & SPECIFIC ROUTES FIRST ---
 Applyrouter.get("/mine", protect, getMyVisaApplications);
+Applyrouter.get("/admin/all", protect, authorizePermission("applications"), getAllVisaApplications);
+Applyrouter.get("/draft/program/:programId", protect, getDraftByProgram);
+
+// --- POST ACTIONS ---
+Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
+Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
+Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submitDraftApplication);
+
+// --- PARAMETERIZED ROUTES LAST ---
 Applyrouter.get("/:id", protect, getVisaApplicationById);
 Applyrouter.put("/:id", protect, uploadFields, parseFormDataBody, updateVisaApplication); 
 Applyrouter.delete("/:id", protect, deleteVisaApplication);
