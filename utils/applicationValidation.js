@@ -27,7 +27,6 @@ export const validateApplicationSubmit = (body) => {
     const l = body.languageProficiency || {};
     const prog = body.programInterest || {};
     const f = body.financialAndVisa || {};
-    const att = body.attachments || {};
 
     if (!p.fullName?.trim()) errors.push("Full name is required");
     if (!p.dateOfBirth) errors.push("Date of birth is required");
@@ -44,7 +43,9 @@ export const validateApplicationSubmit = (body) => {
     if (primaryYearError) errors.push(primaryYearError);
     if (!a.boardOrUniversity?.trim()) errors.push("Board / university is required");
     if (!a.gpaOrPercentage?.trim()) errors.push("GPA / percentage is required");
-    if (!a.transcriptUpload?.trim()) errors.push("Transcript upload is required");
+    else if (String(a.gpaOrPercentage).includes("-") || Number(String(a.gpaOrPercentage).replace("%", "").split("/")[0]) < 0) {
+        errors.push("GPA / percentage cannot be negative");
+    }
 
     (a.schools || []).forEach((school, index) => {
         const recordLabel = `Additional academic record ${index + 1}`;
@@ -53,7 +54,9 @@ export const validateApplicationSubmit = (body) => {
         if (schoolYearError) errors.push(schoolYearError);
         if (!school.boardOrUniversity?.trim()) errors.push(`${recordLabel}: board / university is required`);
         if (!school.gpaOrPercentage?.trim()) errors.push(`${recordLabel}: GPA / percentage is required`);
-        if (!school.resultUpload?.trim()) errors.push(`${recordLabel}: result upload is required`);
+        else if (String(school.gpaOrPercentage).includes("-") || Number(String(school.gpaOrPercentage).replace("%", "").split("/")[0]) < 0) {
+            errors.push(`${recordLabel}: GPA / percentage cannot be negative`);
+        }
     });
 
     if (!prog.programType) errors.push("Program type is required");
@@ -63,18 +66,27 @@ export const validateApplicationSubmit = (body) => {
     if (!prog.modeOfStudy) errors.push("Mode of study is required");
 
     if (!f.fundingSource) errors.push("Funding source is required");
-    if (!f.passportExpiryDate) errors.push("Passport expiry date is required");
-
-    if (!att.resumeCv?.trim()) errors.push("Resume / CV is required");
-    if (!att.passportCopyUpload?.trim()) errors.push("Passport copy is required");
-    if (!att.nationalIdProof?.trim()) errors.push("National ID proof is required");
+    if (!f.passportExpiryDate) {
+        errors.push("Passport expiry date is required");
+    } else {
+        const expiryValue = String(f.passportExpiryDate).slice(0, 10);
+        const expiryYear = Number(expiryValue.slice(0, 4));
+        const maxExpiryYear = CURRENT_YEAR + 20;
+        if (!/^\d{4}-\d{2}-\d{2}/.test(expiryValue) || Number.isNaN(expiryYear)) {
+            errors.push("Passport expiry year must be a valid 4-digit year");
+        } else if (expiryYear < CURRENT_YEAR) {
+            errors.push(`Passport expiry year cannot be before ${CURRENT_YEAR}`);
+        } else if (expiryYear > maxExpiryYear) {
+            errors.push(`Passport expiry year cannot be after ${maxExpiryYear}`);
+        }
+    }
 
     if (l.examType && l.examType !== "Not Required" && l.examType !== "") {
-        if (!l.score?.trim()) {
+        const scoreText = String(l.score ?? "").trim();
+        if (!scoreText) {
             errors.push("Language test score is required when an exam type is selected");
-        }
-        if (!l.IELTSresult?.trim()) {
-            errors.push("Language test result document is required when an exam type is selected");
+        } else if (scoreText.includes("-") || Number(scoreText) < 0) {
+            errors.push("Language test score cannot be negative");
         }
     }
 
