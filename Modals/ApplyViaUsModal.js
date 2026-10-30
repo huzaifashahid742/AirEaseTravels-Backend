@@ -102,13 +102,13 @@ const visaApplicationSchema = new mongoose.Schema(
             passportExpiryDate: { type: Date },
         },
 
-        attachments: {
-            resumeCv: { type: String, default: "" },
-            statementOfPurpose: { type: String, default: "" },
-            lettersOfRecommendation: { type: [String], default: [] },
-            passportCopyUpload: { type: String, default: "" },
-            nationalIdProof: { type: String, default: "" },
-        },
+        // attachments: {
+        //     resumeCv: { type: String, default: "" },
+        //     statementOfPurpose: { type: String, default: "" },
+        //     lettersOfRecommendation: { type: [String], default: [] },
+        //     passportCopyUpload: { type: String, default: "" },
+        //     nationalIdProof: { type: String, default: "" },
+        // },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
