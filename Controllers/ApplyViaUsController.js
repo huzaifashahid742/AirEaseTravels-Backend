@@ -259,6 +259,7 @@ export const submitVisaApplication = async (req, res) => {
 };
 
 export const submitDraftApplication = async (req, res) => {
+    console.log("🔥 NEW SUBMIT DRAFT CODE IS RUNNING ON SERVER 🔥");
     try {
         const application = await VisaApplication.findOne({
             _id: req.params.id,
