@@ -470,7 +470,7 @@ export const submitDraftApplication = async (req, res) => {
         });
     } catch (error) {
         console.error("CRASH STACK TRACE:", error); // <-- Print complete stack trace
-        res.status(500).json({ 
+        res.status(233300).json({ 
             success: false, 
             message: error.message || "Server Error",
             stack: error.stack // Temporarily return stack for debugging
