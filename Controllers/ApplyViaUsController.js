@@ -39,8 +39,7 @@ const pickDraftPayload = (body) => {
         "languageProficiency",
         "programInterest",
         "experienceInfo",
-        "financialAndVisa",
-        "attachments",
+        "financialAndVisa"
     ];
     const payload = {};
     fields.forEach((key) => {
@@ -50,16 +49,6 @@ const pickDraftPayload = (body) => {
     if (payload.personalInfo) {
         payload.personalInfo = normalizePersonalInfo(payload.personalInfo);
     }
-
-    if (payload.attachments && typeof payload.attachments === 'object') {
-        Object.keys(payload.attachments).forEach(key => {
-            const val = payload.attachments[key];
-            if (val && typeof val === 'object' && !Array.isArray(val) && Object.keys(val).length === 0) {
-                delete payload.attachments[key];
-            }
-        });
-    }
-
     if (payload.academicBackground && typeof payload.academicBackground === 'object') {
         if (payload.academicBackground.transcriptUpload && typeof payload.academicBackground.transcriptUpload === 'object') {
             payload.academicBackground.transcriptUpload = "";

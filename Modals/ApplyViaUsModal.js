@@ -12,7 +12,6 @@ const schoolSchema = new mongoose.Schema(
         graduationYear: { type: Number },
         boardOrUniversity: { type: String, trim: true, default: "" },
         gpaOrPercentage: { type: String, trim: true, default: "" },
-        resultUpload: { type: String, default: "" },
     },
     { _id: false }
 );
@@ -49,7 +48,6 @@ const visaApplicationSchema = new mongoose.Schema(
             yearOfGraduation: { type: Number },
             boardOrUniversity: { type: String, trim: true, default: "" },
             gpaOrPercentage: { type: String, trim: true, default: "" },
-            transcriptUpload: { type: String, default: "" },
             schools: { type: [schoolSchema], default: [] },
         },
         languageProficiency: {
@@ -101,14 +99,6 @@ const visaApplicationSchema = new mongoose.Schema(
             },
             passportExpiryDate: { type: Date },
         },
-
-        // attachments: {
-        //     resumeCv: { type: String, default: "" },
-        //     statementOfPurpose: { type: String, default: "" },
-        //     lettersOfRecommendation: { type: [String], default: [] },
-        //     passportCopyUpload: { type: String, default: "" },
-        //     nationalIdProof: { type: String, default: "" },
-        // },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

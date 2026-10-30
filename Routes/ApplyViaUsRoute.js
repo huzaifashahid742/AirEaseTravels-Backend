@@ -25,8 +25,7 @@ const parseFormDataBody = (req, res, next) => {
         "languageProficiency", 
         "programInterest", 
         "experienceInfo", 
-        "financialAndVisa",
-        "attachments"
+        "financialAndVisa"
     ];
 
     complexFields.forEach((field) => {
@@ -45,19 +44,12 @@ Applyrouter.get("/mine", protect, getMyVisaApplications);
 Applyrouter.get("/admin/all", protect, authorizePermission("applications"), getAllVisaApplications);
 Applyrouter.get("/draft/program/:programId", protect, getDraftByProgram);
 
-// // --- POST ACTIONS ---
-// Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
-// Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
-// Applyrouter.post("/:id/submit", protect, parseFormDataBody, submitDraftApplication);
-// --- POST ACTIONS ---
-Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
-Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
 
-// FIX: Add uploadFields here so multer parses the multipart form data correctly
-Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submitDraftApplication);
+Applyrouter.post("/draft", protect, parseFormDataBody, saveApplicationDraft);
+Applyrouter.post("/", protect, parseFormDataBody, submitVisaApplication);
+Applyrouter.post("/:id/submit", protect, parseFormDataBody, submitDraftApplication);
 
 
-// --- PARAMETERIZED ROUTES LAST ---
 Applyrouter.get("/:id", protect, getVisaApplicationById);
 Applyrouter.put("/:id", protect, parseFormDataBody, updateVisaApplication); 
 Applyrouter.delete("/:id", protect, deleteVisaApplication);
