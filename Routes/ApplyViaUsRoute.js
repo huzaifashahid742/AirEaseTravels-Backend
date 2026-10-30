@@ -45,10 +45,17 @@ Applyrouter.get("/mine", protect, getMyVisaApplications);
 Applyrouter.get("/admin/all", protect, authorizePermission("applications"), getAllVisaApplications);
 Applyrouter.get("/draft/program/:programId", protect, getDraftByProgram);
 
+// // --- POST ACTIONS ---
+// Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
+// Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
+// Applyrouter.post("/:id/submit", protect, parseFormDataBody, submitDraftApplication);
 // --- POST ACTIONS ---
 Applyrouter.post("/draft", protect, uploadFields, parseFormDataBody, saveApplicationDraft);
 Applyrouter.post("/", protect, uploadFields, parseFormDataBody, submitVisaApplication);
-Applyrouter.post("/:id/submit", protect, parseFormDataBody, submitDraftApplication);
+
+// FIX: Add uploadFields here so multer parses the multipart form data correctly
+Applyrouter.post("/:id/submit", protect, uploadFields, parseFormDataBody, submitDraftApplication);
+
 
 // --- PARAMETERIZED ROUTES LAST ---
 Applyrouter.get("/:id", protect, getVisaApplicationById);
