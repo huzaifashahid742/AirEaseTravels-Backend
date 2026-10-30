@@ -1,5 +1,36 @@
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_GRADUATION_YEAR = 1950;
+const MAX_PASSPORT_EXPIRY_YEAR = CURRENT_YEAR + 20;
+
+const todayIsoDate = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+export const isValidAcademicResult = (value) => {
+    const result = String(value ?? "").trim();
+    if (!result || result.includes("-")) return false;
+
+    const percentage = result.match(/^(\d{1,3}(?:\.\d{1,2})?)\s*%$/);
+    if (percentage) {
+        const number = Number(percentage[1]);
+        return number >= 0 && number <= 100;
+    }
+
+    const fraction = result.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+    if (fraction) {
+        const obtained = Number(fraction[1]);
+        const maximum = Number(fraction[2]);
+        return maximum > 0 && obtained >= 0 && obtained <= maximum;
+    }
+
+    if (!/^\d+(?:\.\d{1,2})?$/.test(result)) return false;
+    const number = Number(result);
+    return number >= 0 && number <= 100;
+};
 
 export const validateGraduationYear = (year, label = "Year of completion") => {
     if (year === undefined || year === null || year === "") {
@@ -44,8 +75,8 @@ export const validateApplicationSubmit = (body) => {
     if (primaryYearError) errors.push(primaryYearError);
     if (!a.boardOrUniversity?.trim()) errors.push("Board / university is required");
     if (!a.gpaOrPercentage?.trim()) errors.push("GPA / percentage is required");
-    else if (String(a.gpaOrPercentage).includes("-") || Number(String(a.gpaOrPercentage).replace("%", "").split("/")[0]) < 0) {
-        errors.push("GPA / percentage cannot be negative");
+    else if (!isValidAcademicResult(a.gpaOrPercentage)) {
+        errors.push("GPA / percentage cannot be negative and must be a valid score");
     }
 
     (a.schools || []).forEach((school, index) => {
@@ -55,7 +86,7 @@ export const validateApplicationSubmit = (body) => {
         if (schoolYearError) errors.push(schoolYearError);
         if (!school.boardOrUniversity?.trim()) errors.push(`${recordLabel}: board / university is required`);
         if (!school.gpaOrPercentage?.trim()) errors.push(`${recordLabel}: GPA / percentage is required`);
-        else if (String(school.gpaOrPercentage).includes("-") || Number(String(school.gpaOrPercentage).replace("%", "").split("/")[0]) < 0) {
+        else if (!isValidAcademicResult(school.gpaOrPercentage)) {
             errors.push(`${recordLabel}: GPA / percentage cannot be negative`);
         }
     });
@@ -72,13 +103,14 @@ export const validateApplicationSubmit = (body) => {
     } else {
         const expiryValue = String(f.passportExpiryDate).slice(0, 10);
         const expiryYear = Number(expiryValue.slice(0, 4));
-        const maxExpiryYear = CURRENT_YEAR + 20;
         if (!/^\d{4}-\d{2}-\d{2}/.test(expiryValue) || Number.isNaN(expiryYear)) {
             errors.push("Passport expiry year must be a valid 4-digit year");
         } else if (expiryYear < CURRENT_YEAR) {
             errors.push(`Passport expiry year cannot be before ${CURRENT_YEAR}`);
-        } else if (expiryYear > maxExpiryYear) {
-            errors.push(`Passport expiry year cannot be after ${maxExpiryYear}`);
+        } else if (expiryYear > MAX_PASSPORT_EXPIRY_YEAR) {
+            errors.push(`Passport expiry year cannot be after ${MAX_PASSPORT_EXPIRY_YEAR}`);
+        } else if (expiryValue <= todayIsoDate()) {
+            errors.push("Passport expiry must be a future date");
         }
     }
 

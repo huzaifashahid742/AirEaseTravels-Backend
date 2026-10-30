@@ -25,8 +25,13 @@ const visaApplicationSchema = new mongoose.Schema(
         },
         programName: { type: String, trim: true, default: "" },
         universityName: { type: String, trim: true, default: "" },
-        currentStep: { type: Number, default: 1, min: 1, max: 8 },
+        currentStep: { type: Number, default: 1, min: 1, max: 7 },
         isDraft: { type: Boolean, default: true },
+        applicationStatus: {
+            type: String,
+            enum: ["Draft", "Pending", "Under Review", "Approved", "Rejected"],
+            default: "Draft",
+        },
         submittedAt: { type: Date },
 
         personalInfo: {
@@ -53,22 +58,19 @@ const visaApplicationSchema = new mongoose.Schema(
             schools: { type: [schoolSchema], default: [] },
         },
         languageProficiency: {
-        examType: {
-        type: String,
-        enum: ["IELTS", "TOEFL", "PTE", "Not Required", ""],
-        default: "Not Required",
+            examType: {
+                type: String,
+                enum: ["IELTS", "TOEFL", "PTE", "Not Required", ""],
+                default: "Not Required",
+            },
+            score: {
+                type: String,
+                default: "",
+                trim: true,
+            },
+            examDateOrExpiry: { type: String, default: "", trim: true },
+            IELTSresult: { type: String, default: "" },
         },
-    score: { 
-        type: String, 
-        default: "", 
-        trim: true,
-        required: function() {
-            return this.examType && this.examType !== "Not Required";
-        }
-    },
-    examDateOrExpiry: { type: String, default: "", trim: true },
-    IELTSresult: { type: String, default: "" },
-},
 
         programInterest: {
             programType: {

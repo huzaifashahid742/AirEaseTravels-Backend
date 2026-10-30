@@ -290,27 +290,67 @@ export const getDraftByProgram = async (req, res) => {
 
 export const submitVisaApplication = async (req, res) => {
     try {
-        const { id } = req.params;
+        let payload = pickDraftPayload(req.body);
+        payload = await handleFileMapping(req, payload);
+        payload.userId = req.user._id;
 
-        const updatedApplication = await VisaApplication.findByIdAndUpdate(
-            id,
-            { 
-                isDraft: false, 
-                submittedAt: new Date() 
-            },
-            { new: true, runValidators: true } // Ensures schema rules are checked
-        );
-
-        if (!updatedApplication) {
-            return res.status(404).json({ success: false, message: "Visa application not found" });
+        if (payload.personalInfo) {
+            payload.personalInfo = normalizePersonalInfo(payload.personalInfo);
         }
 
-        return res.status(200).json({ success: true, data: updatedApplication });
+        const errors = validateApplicationSubmit(payload);
+        if (errors.length) {
+            return res.status(400).json({
+                success: false,
+                message: errors.join(". "),
+            });
+        }
+
+        payload.isDraft = false;
+        payload.applicationStatus = "Pending";
+        payload.submittedAt = new Date();
+
+        const applicationId = req.body.applicationId;
+        let existing = null;
+
+        if (applicationId) {
+            existing = await VisaApplication.findOne({
+                _id: applicationId,
+                userId: req.user._id,
+            });
+            if (!existing) {
+                return res.status(404).json({ success: false, message: "Application not found" });
+            }
+        } else if (payload.programId) {
+            existing = await VisaApplication.findOne({
+                userId: req.user._id,
+                programId: payload.programId,
+                isDraft: true,
+            });
+        }
+
+        let application;
+        if (existing) {
+            payload = mergeDraftWithExisting(existing, payload);
+            application = await VisaApplication.findByIdAndUpdate(
+                existing._id,
+                { $set: payload },
+                { new: true, runValidators: false }
+            );
+        } else {
+            application = await VisaApplication.create(payload);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Application submitted successfully!",
+            data: application,
+        });
     } catch (error) {
         console.error("Submission Error:", error);
-        return res.status(500).json({ 
-            success: false, 
-            message: error.message || "Internal Server Error" 
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Internal Server Error",
         });
     }
 };
@@ -388,7 +428,6 @@ export const submitDraftApplication = async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 message: errors.join(". "),
-                debugDatabaseRecord: application.attachments 
             });
         }
 
@@ -417,7 +456,6 @@ export const submitDraftApplication = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: error.message || "Server Error",
-            stack: error.stack 
         });
     }
 };
