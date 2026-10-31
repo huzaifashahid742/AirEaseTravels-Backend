@@ -103,15 +103,18 @@ const programSchema = new mongoose.Schema(
     }
 );
 
-programSchema.pre("save", function (next) {
+
+// Generate program slug automatically before saving.
+programSchema.pre("save", function () {
     if (this.isModified("programName") || !this.slug) {
         this.slug = this.programName
             .toLowerCase()
+            .trim()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "");
     }
-    next();
 });
+
 
 const Program = mongoose.model("Program", programSchema);
 export default Program;

@@ -76,16 +76,14 @@ const universitySchema = new mongoose.Schema(
   }
 );
 
-// Generate slug automatically before saving.
-// No next() callback is needed.
 universitySchema.pre("save", function () {
-  if (this.isModified("universityName") || !this.slug) {
-    this.slug = this.universityName
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }
+    if (this.isModified("universityName") || !this.slug) {
+        this.slug = this.universityName
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "");
+    }
 });
 
 const University = mongoose.model("University", universitySchema);
