@@ -77,10 +77,9 @@ const universitySchema = new mongoose.Schema(
 );
 
 universitySchema.pre("save", function () {
-    if (this.isModified("universityName") || !this.slug) {
-        this.slug = this.universityName
+    if (this.isModified("countryName") || !this.slug) {
+        this.slug = this.countryName
             .toLowerCase()
-            .trim()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "");
     }
